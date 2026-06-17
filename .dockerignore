@@ -14,3 +14,14 @@ eval/
 .dockerignore
 Dockerfile
 docker-compose.yml
+
+# Node.js
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.npm-cache/
+
+# Local databases and tests
+data/
+tests/
+
