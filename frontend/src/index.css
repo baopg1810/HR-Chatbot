@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply text-brand-text bg-white font-sans;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

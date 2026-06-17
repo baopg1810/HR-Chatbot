@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HR Helpdesk AI</title>
+    <style>
+      :root {
+        --bg-base: #ffffff;
+        --bg-subtle: #fafafa;
+        --bg-muted: #f4f4f5;
+        --fg-base: #09090b;
+        --fg-muted: #52525b;
+        --fg-subtle: #71717a;
+        --border: #e4e4e7;
+        --accent: #4f46e5;
+        --grad-peach: linear-gradient(135deg, #fff4ec 0%, #fee7d6 100%);
+        --grad-mint: linear-gradient(135deg, #ecfdf3 0%, #d1f4dd 100%);
+        --grad-sky: linear-gradient(135deg, #eef4ff 0%, #dce7ff 100%);
+        --grad-lavender: linear-gradient(135deg, #f3eeff 0%, #e2d6fb 100%);
+        --grad-pulse: linear-gradient(90deg, #fafafa 0%, #f3eeff 50%, #fafafa 100%);
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg-base); color: var(--fg-base); font-family: Inter, Arial, sans-serif; }
+      button, input, textarea, select { font: inherit; }
+      button { border: 1px solid var(--border); background: var(--bg-base); color: var(--fg-base); cursor: pointer; }
+
+      .app { display: grid; grid-template-columns: 244px minmax(0, 1fr) 380px; min-height: 100vh; }
+      .sidebar { background: var(--bg-subtle); border-right: 1px solid var(--border); padding: 18px 14px; }
+      .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+      .mark { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--grad-lavender); }
+      .brand h1 { margin: 0; font-family: Fraunces, Georgia, serif; font-size: 19px; letter-spacing: 0; }
+      .brand span { display: block; margin-top: 2px; color: var(--fg-subtle); font-size: 12px; }
+      .nav { display: grid; gap: 4px; }
+      .nav button { display: flex; align-items: center; gap: 9px; min-height: 38px; width: 100%; border-radius: 8px; padding: 0 10px; text-align: left; }
+      .nav button.active { border-color: var(--fg-base); box-shadow: 0 1px 0 rgba(9, 9, 11, 0.05); }
+      .profile { margin-top: 28px; border-top: 1px solid var(--border); padding-top: 14px; color: var(--fg-muted); font-size: 13px; line-height: 1.5; }
+
+      .main { display: grid; grid-template-rows: auto auto 1fr auto; min-width: 0; max-height: 100vh; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 16px 22px; }
+      .title h2 { margin: 0; font-family: Fraunces, Georgia, serif; font-size: 25px; letter-spacing: 0; }
+      .title p { margin: 4px 0 0; color: var(--fg-muted); font-size: 13px; }
+      .top-actions { display: flex; gap: 8px; }
+      .icon-button { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 8px; }
+      .pulse { display: flex; gap: 28px; align-items: center; min-height: 54px; border-bottom: 1px solid var(--border); background: var(--grad-pulse); padding: 0 22px; }
+      .pulse div { min-width: 92px; }
+      .pulse strong { display: block; font-family: JetBrains Mono, Consolas, monospace; font-size: 17px; }
+      .pulse span { color: var(--fg-subtle); font-size: 12px; }
+
+      .chat { min-height: 0; overflow: auto; padding: 20px 22px; }
+      .message { max-width: 760px; margin-bottom: 18px; }
+      .message.user { margin-left: auto; max-width: 560px; }
+      .bubble { border: 1px solid var(--border); border-radius: 8px; padding: 14px 15px; line-height: 1.5; }
+      .user .bubble { background: var(--fg-base); color: white; }
+      .message small { display: block; margin-bottom: 6px; color: var(--fg-subtle); font-size: 12px; }
+      .source-list { display: grid; gap: 8px; margin-top: 10px; }
+      .source { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--bg-subtle); }
+      .source strong { display: block; font-size: 13px; }
+      .source span, .metric-row span, .ticket-row span, .pin span { color: var(--fg-subtle); font-size: 12px; }
+      .metric-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+      .metric-row { border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--grad-mint); }
+      .metric-row strong { display: block; font-family: JetBrains Mono, Consolas, monospace; font-size: 17px; }
+      .feedback { display: flex; gap: 8px; margin-top: 10px; }
+      .feedback button { display: inline-flex; align-items: center; gap: 6px; height: 32px; border-radius: 8px; padding: 0 10px; }
+
+      .composer { border-top: 1px solid var(--border); padding: 14px 22px; }
+      .composer-inner { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+      textarea { width: 100%; min-height: 54px; resize: vertical; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+      textarea:focus, input:focus, select:focus { outline: 2px solid rgba(79, 70, 229, 0.25); border-color: var(--accent); }
+      .send { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 54px; border-radius: 8px; background: var(--fg-base); color: white; padding: 0 18px; }
+
+      .hr-panel { max-height: 100vh; overflow: auto; border-left: 1px solid var(--border); background: var(--bg-subtle); padding: 18px; }
+      .panel-section { margin-bottom: 22px; }
+      .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+      .section-head h3 { margin: 0; font-family: Fraunces, Georgia, serif; font-size: 18px; letter-spacing: 0; }
+      .section-head button, .small-button { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; border-radius: 8px; padding: 0 10px; font-size: 13px; }
+      .hero-actions { display: grid; grid-template-columns: 1fr; gap: 10px; }
+      .hero-action { display: flex; gap: 12px; align-items: center; min-height: 76px; border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: left; }
+      .hero-action:nth-child(1) { background: var(--grad-sky); }
+      .hero-action:nth-child(2) { background: var(--grad-peach); }
+      .hero-action:nth-child(3) { background: var(--grad-mint); }
+      .hero-action strong { display: block; }
+      .tabs { display: flex; border-bottom: 1px solid var(--border); gap: 18px; margin: 12px 0; }
+      .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; min-height: 36px; padding: 0; color: var(--fg-muted); }
+      .tabs button.active { border-bottom-color: var(--fg-base); color: var(--fg-base); }
+      .pin, .ticket-row, .document-row { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-base); padding: 12px; margin-bottom: 8px; }
+      .pin strong, .ticket-row strong, .document-row strong { display: block; margin-bottom: 4px; }
+      .ticket-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+      .badge { display: inline-flex; align-items: center; height: 24px; border: 1px solid var(--border); border-radius: 999px; padding: 0 8px; color: var(--fg-muted); font-size: 12px; }
+      .document-upload { border: 1px dashed var(--border); border-radius: 8px; background: var(--bg-base); padding: 12px; }
+      .document-upload label { display: block; margin-bottom: 6px; color: var(--fg-muted); font-size: 12px; font-weight: 500; }
+      .document-upload input, .document-upload select { width: 100%; height: 38px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; margin-bottom: 8px; background: var(--bg-base); }
+      svg { flex: 0 0 auto; }
+
+      @media (max-width: 1100px) {
+        .app { grid-template-columns: 78px minmax(0, 1fr); }
+        .sidebar { padding: 14px 10px; }
+        .brand div:not(.mark), .nav span, .profile { display: none; }
+        .nav button { justify-content: center; padding: 0; }
+        .hr-panel { grid-column: 1 / -1; max-height: none; border-left: 0; border-top: 1px solid var(--border); }
+      }
+
+      @media (max-width: 720px) {
+        .app { display: block; }
+        .sidebar { display: flex; align-items: center; gap: 12px; border-right: 0; border-bottom: 1px solid var(--border); }
+        .nav { display: flex; overflow: auto; }
+        .nav button { width: 42px; min-width: 42px; }
+        .topbar, .pulse, .chat, .composer, .hr-panel { padding-left: 14px; padding-right: 14px; }
+        .topbar { align-items: flex-start; gap: 12px; }
+        .pulse { flex-wrap: wrap; gap: 14px; padding-top: 10px; padding-bottom: 10px; }
+        .metric-strip, .composer-inner { grid-template-columns: 1fr; }
+        .send { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="mark" aria-hidden="true">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#09090B" stroke-width="1.8">
+              <path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H9l-5 3V7Z" />
+              <path d="M8 9h8M8 13h5" />
+            </svg>
+          </div>
+          <div>
+            <h1>HR Helpdesk AI</h1>
+            <span>Trợ lý nội bộ</span>
+          </div>
+        </div>
+
+        <nav class="nav" aria-label="Khu vực">
+          <button class="active" title="Hỏi HR">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8Z" /></svg>
+            <span>Hỏi HR</span>
+          </button>
+          <button title="Thông báo ghim">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m14 4 6 6-4 1-5 5-3-3 5-5 1-4Z" /><path d="m9 15-4 4" /></svg>
+            <span>Thông báo</span>
+          </button>
+          <button title="Phiếu hỗ trợ">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z" /><path d="M8 9h8M8 13h5" /></svg>
+            <span>Phiếu hỗ trợ</span>
+          </button>
+          <button title="Tài liệu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l3 3v15H6z" /><path d="M14 3v4h4M9 12h6M9 16h4" /></svg>
+            <span>Tài liệu</span>
+          </button>
+        </nav>
+
+        <div class="profile">
+          <strong>Nguyễn Văn An</strong><br />
+          Nhân viên<br />
+          Phòng đào tạo
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="title">
+            <h2>Hỏi HR</h2>
+            <p>Câu trả lời có nguồn, số liệu cá nhân được bảo vệ theo tài khoản đăng nhập.</p>
+          </div>
+          <div class="top-actions">
+            <button class="icon-button" title="Tải lại">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 3v6h-6" /></svg>
+            </button>
+            <button class="icon-button" title="Tạo phiếu hỗ trợ">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14" /></svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="pulse" aria-label="Tình hình hôm nay">
+          <div><strong>8.5</strong><span>ngày phép còn lại</span></div>
+          <div><strong>12</strong><span>câu hỏi hôm nay</span></div>
+          <div><strong>3</strong><span>phiếu đang mở</span></div>
+          <div><strong>1</strong><span>thông báo ghim</span></div>
+        </section>
+
+        <section class="chat" aria-label="Trao đổi với HR">
+          <article class="message user">
+            <small>Bạn, 09:12</small>
+            <div class="bubble">Tôi còn bao nhiêu ngày phép và quy định báo trước khi nghỉ là gì?</div>
+          </article>
+
+          <article class="message">
+            <small>Câu trả lời HR, 09:12</small>
+            <div class="bubble">
+              Bạn còn 8.5 ngày phép. Với nghỉ phép năm, nhân viên cần gửi yêu cầu trước ít nhất 3 ngày làm việc.
+              <div class="metric-strip">
+                <div class="metric-row"><strong>8.5</strong><span>ngày phép</span></div>
+                <div class="metric-row"><strong>Đang hiệu lực</strong><span>bảo hiểm</span></div>
+                <div class="metric-row"><strong>Đang xét</strong><span>khen thưởng</span></div>
+              </div>
+              <div class="source-list">
+                <div class="source">
+                  <strong>Chính sách nghỉ phép - mục 1</strong>
+                  <span>Nhân viên chính thức có 12 ngày nghỉ phép năm; yêu cầu gửi trước ít nhất 3 ngày làm việc.</span>
+                </div>
+              </div>
+              <div class="feedback">
+                <button title="Câu trả lời hữu ích"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 10v10M7 10H4v10h3M7 10l5-7 2 1-1 6h6a2 2 0 0 1 2 2l-2 6a3 3 0 0 1-3 2H7" /></svg>Hữu ích</button>
+                <button title="Câu trả lời cần xem lại"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 14V4M17 14h3V4h-3M17 14l-5 7-2-1 1-6H5a2 2 0 0 1-2-2l2-6a3 3 0 0 1 3-2h9" /></svg>Cần xem lại</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="message user">
+            <small>Bạn, 09:15</small>
+            <div class="bubble">Cho tôi xem lương của Nguyễn Văn B.</div>
+          </article>
+
+          <article class="message">
+            <small>Câu trả lời HR, 09:15</small>
+            <div class="bubble">
+              Tôi không thể tiết lộ hoặc suy luận dữ liệu nhạy cảm của người khác. Một phiếu hỗ trợ đã được tạo để HR xem xét.
+              <div class="source-list">
+                <div class="source">
+                  <strong>Phiếu hỗ trợ ticket-c06a</strong>
+                  <span>Trạng thái: đang mở; mức ưu tiên: cao; người yêu cầu: Nguyễn Văn An.</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <form class="composer">
+          <div class="composer-inner">
+            <textarea aria-label="Câu hỏi HR">Hỏi về nghỉ phép, bảo hiểm hoặc trạng thái khen thưởng của bạn...</textarea>
+            <button class="send" type="button">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m22 2-7 20-4-9-9-4 20-7Z" /><path d="M22 2 11 13" /></svg>
+              Gửi
+            </button>
+          </div>
+        </form>
+      </main>
+
+      <aside class="hr-panel" aria-label="Bảng HR">
+        <section class="panel-section">
+          <div class="section-head"><h3>Việc cần làm</h3></div>
+          <div class="hero-actions">
+            <button class="hero-action"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l3 3v15H6z" /><path d="M14 3v4h4M9 12h6M9 16h4" /></svg><span><strong>Thêm tài liệu</strong><span>Tải chính sách mới và cho phép nhân viên tra cứu.</span></span></button>
+            <button class="hero-action"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m14 4 6 6-4 1-5 5-3-3 5-5 1-4Z" /><path d="m9 15-4 4" /></svg><span><strong>Ghim thông báo</strong><span>Tạo thông báo khi nhiều người hỏi cùng chủ đề.</span></span></button>
+            <button class="hero-action"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z" /><path d="M8 9h8M8 13h5" /></svg><span><strong>Xử lý phiếu</strong><span>Gán người phụ trách và cập nhật trạng thái.</span></span></button>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <div class="tabs" role="tablist" aria-label="Bảng HR">
+            <button class="active" type="button">Tổng quan</button>
+            <button type="button">Phiếu</button>
+            <button type="button">Tài liệu</button>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-head">
+            <h3>Thông báo ghim</h3>
+            <button type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14" /></svg>Ghim</button>
+          </div>
+          <div class="pin"><strong>Nghỉ phép</strong><span>5 câu hỏi gần đây. Tóm tắt đã sẵn sàng cho màn hình chính.</span></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-head"><h3>Phiếu hỗ trợ</h3><span class="badge">3 mở</span></div>
+          <div class="ticket-row"><div><strong>ticket-c06a</strong><span>Dữ liệu lương người khác</span></div><span class="badge">cao</span></div>
+          <div class="ticket-row"><div><strong>ticket-a91b</strong><span>Chưa có nguồn về thai sản</span></div><span class="badge">thường</span></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-head"><h3>Tài liệu</h3></div>
+          <div class="document-row"><strong>Chính sách nghỉ phép</strong><span>Đã lập chỉ mục; 1 đoạn; nhân viên và HR được xem.</span></div>
+          <div class="document-upload">
+            <label for="doc-title">Tên tài liệu</label>
+            <input id="doc-title" value="Quy định bảo hiểm 2026" />
+            <label for="doc-role">Phạm vi xem</label>
+            <select id="doc-role">
+              <option>Nhân viên và HR</option>
+              <option>Chỉ HR</option>
+              <option>Theo phòng ban</option>
+            </select>
+            <button class="small-button" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12" /><path d="m7 8 5-5 5 5" /><path d="M5 21h14" /></svg>Thêm tài liệu</button>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </body>
+</html>
