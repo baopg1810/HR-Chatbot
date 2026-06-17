@@ -35,11 +35,6 @@ COPY --chown=appuser:appuser . .
 # Copy built frontend from Stage 1
 COPY --chown=appuser:appuser --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Ensure appuser owns the app directory for runtime storage
-RUN mkdir -p /app/data && chown -R appuser:appuser /app
-
-USER appuser
-
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
