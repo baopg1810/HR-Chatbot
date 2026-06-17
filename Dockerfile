@@ -22,18 +22,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Security: run as non-root user
-RUN useradd -m appuser
-
 # Copy python dependencies
-COPY --chown=appuser:appuser --from=backend-builder /root/.local /home/appuser/.local
-ENV PATH=/home/appuser/.local/bin:$PATH
+COPY --from=backend-builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
 
 # Copy application files
-COPY --chown=appuser:appuser . .
+COPY . .
 
 # Copy built frontend from Stage 1
-COPY --chown=appuser:appuser --from=frontend-builder /app/frontend/dist ./frontend/dist
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 EXPOSE 8000
 
