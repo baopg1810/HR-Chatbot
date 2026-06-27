@@ -1,0 +1,6 @@
+{
+  "name": "HR Connect AI",
+  "description": "HR Assistant & Support Portal with role-based access",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

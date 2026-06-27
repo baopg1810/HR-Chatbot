@@ -1,12 +1,12 @@
 # ---- Stage 1: Build Frontend ----
 FROM node:20-alpine AS frontend-builder
 
-WORKDIR /app/frontend
+WORKDIR /app/fontend
 
-COPY frontend/package*.json ./
+COPY fontend/package*.json ./
 RUN npm install --prefer-offline --no-audit
 
-COPY frontend/ ./
+COPY fontend/ ./
 RUN npm run build
 
 # ---- Stage 2: Build Python dependencies ----
@@ -25,17 +25,18 @@ WORKDIR /app
 # Copy python dependencies
 COPY --from=backend-builder /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=/app/backend
 
 # Copy application files
 COPY . .
 
 # Copy built frontend from Stage 1
-COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+COPY --from=frontend-builder /app/fontend/dist ./fontend/dist
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD python -c "import urllib.request, os; port = os.environ.get('PORT', '8000'); urllib.request.urlopen(f'http://localhost:{port}/health')" || exit 1
 
-CMD ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
 
