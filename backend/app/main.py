@@ -28,10 +28,33 @@ async def init_db():
         return
 
     print("Initializing database tables...")
+    
+    db_file = Path("/app/data/app.db")
+    if not db_file.exists():
+        db_file = Path("./data/app.db")
+        
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-            
+        
+        # Test if we can query users without triggering UUID parsing error
+        async with get_db_context() as db:
+            await db.execute(select(User).limit(1))
+    except Exception as e:
+        print(f"Database schema mismatch or error: {e}. Resetting database file...")
+        await engine.dispose()
+        if db_file.exists():
+            try:
+                db_file.unlink()
+                print(f"Deleted outdated database file: {db_file}")
+            except Exception as unlink_err:
+                print(f"Failed to delete database file: {unlink_err}")
+        
+        # Recreate tables after deleting database
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+    try:
         print("Seeding demo users...")
         async with get_db_context() as db:
             # Seed employee
@@ -71,7 +94,7 @@ async def init_db():
             await db.commit()
         print("Database initialization and seeding complete.")
     except Exception as e:
-        print(f"Error during database initialization: {e}")
+        print(f"Error during database seeding: {e}")
 
 
 
