@@ -33,26 +33,39 @@ async def init_db():
     if not db_file.exists():
         db_file = Path("./data/app.db")
         
+    db_has_alembic = False
     try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        
-        # Test if we can query users without triggering UUID parsing error
-        async with get_db_context() as db:
-            await db.execute(select(User).limit(1))
-    except Exception as e:
-        print(f"Database schema mismatch or error: {e}. Resetting database file...")
-        await engine.dispose()
-        if db_file.exists():
-            try:
-                db_file.unlink()
-                print(f"Deleted outdated database file: {db_file}")
-            except Exception as unlink_err:
-                print(f"Failed to delete database file: {unlink_err}")
-        
-        # Recreate tables after deleting database
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        async with engine.connect() as conn:
+            from sqlalchemy import inspect
+            def check_alembic(bind):
+                return inspect(bind).has_table("alembic_version")
+            db_has_alembic = await conn.run_sync(check_alembic)
+    except Exception as inspect_err:
+        print(f"Could not inspect database tables: {inspect_err}")
+
+    if db_has_alembic:
+        print("Database is managed by Alembic. Skipping automatic table creation.")
+    else:
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            
+            # Test if we can query users without triggering UUID parsing error
+            async with get_db_context() as db:
+                await db.execute(select(User).limit(1))
+        except Exception as e:
+            print(f"Database schema mismatch or error: {e}. Resetting database file...")
+            await engine.dispose()
+            if db_file.exists():
+                try:
+                    db_file.unlink()
+                    print(f"Deleted outdated database file: {db_file}")
+                except Exception as unlink_err:
+                    print(f"Failed to delete database file: {unlink_err}")
+            
+            # Recreate tables after deleting database
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
 
     try:
         print("Seeding demo users...")
