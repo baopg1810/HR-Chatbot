@@ -1,0 +1,35 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# OS
+.DS_Store
+
+# Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+.npm-cache
+# Runtime data
+data/
+
+# AI logs — tracked structure, ignored content
+.ai-log/*.log
+.ai-log/*.jsonl
+!.ai-log/archive/
+!.ai-log/archive/*.jsonl
+buildflow
+cards
+MODE
+Module RAG

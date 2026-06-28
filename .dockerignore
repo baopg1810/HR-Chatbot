@@ -1,0 +1,54 @@
+# Version control
+.git
+.gitignore
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual env & cache
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Frontend build artifacts (rebuilt in Docker)
+frontend/node_modules
+frontend/dist
+frontend/.npm-cache
+
+# Dev & docs (not needed in production)
+docs/
+presentation/
+eval/
+mockups/
+cards/
+buildflow/
+scripts/
+tests/
+data/
+
+# AI agent configs
+.agents/
+.claude/
+.codex/
+.cursor/
+.gemini/
+.github/
+.ai-log/
+
+# Misc
+*.md
+!requirements.txt
+.dockerignore
+Dockerfile
+docker-compose.yml
+railway.json
+Makefile
+ruff.toml
+MODE

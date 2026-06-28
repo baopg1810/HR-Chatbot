@@ -1,0 +1,330 @@
+{
+  "name": "So Tay Nhan Vien Golden Dataset",
+  "version": "2026-06-27",
+  "language": "vi",
+  "description": "20 query/answer pairs grounded in eval/So_tay_nhan_vien.md. The source document is assumed to already exist in the live database/vector store.",
+  "default_user": "employee@example.com",
+  "knowledge_base": [],
+  "cases": [
+    {
+      "id": "STNV001",
+      "category": "scope",
+      "query": "Sổ tay nhân viên áp dụng cho những ai?",
+      "answer": "Sổ tay áp dụng cho mọi thành viên có hợp đồng lao động chính thức từ 12 tháng trở lên với Công ty Cổ phần Quốc Tế EIV. Các trường hợp thử việc, hợp đồng dưới 12 tháng, trợ giảng và giáo viên được quy định theo hợp đồng, quyết định hoặc thỏa thuận riêng.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["hop dong lao dong chinh thuc", "12 thang", "thoa thuan rieng"],
+      "forbidden_phrases": ["ap dung cho tat ca khong ngoai le"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should explain the handbook's applicable audience.",
+        "correctness": "Must mention official labor contracts from 12 months and separate rules for remaining cases."
+      }
+    },
+    {
+      "id": "STNV002",
+      "category": "company_profile",
+      "query": "EIV được thành lập năm nào và có trụ sở chính ở đâu?",
+      "answer": "EIV được thành lập năm 2009 trong lĩnh vực giáo dục, có trụ sở chính tại TP.Hồ Chí Minh và văn phòng đại diện tại Hà Nội, TP.Đà Nẵng.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["2009", "TP.Ho Chi Minh", "Ha Noi", "Da Nang"],
+      "forbidden_phrases": ["2019", "trụ sở chính tại Hà Nội"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should state year and locations.",
+        "correctness": "Must include 2009, main office in Ho Chi Minh City, and representative offices in Hanoi and Da Nang."
+      }
+    },
+    {
+      "id": "STNV003",
+      "category": "company_profile",
+      "query": "Khẩu hiệu của EIV là gì?",
+      "answer": "Khẩu hiệu của EIV là: Bring you to the top - Đưa bạn tới đỉnh cao.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["Bring you to the top", "Dua ban toi dinh cao"],
+      "forbidden_phrases": ["Together we grow"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should provide the company slogan only.",
+        "correctness": "Must include both English and Vietnamese slogan text."
+      }
+    },
+    {
+      "id": "STNV004",
+      "category": "recruitment",
+      "query": "Ứng viên phải trải qua mấy vòng kiểm tra trước khi ký hợp đồng thử việc?",
+      "answer": "Mỗi ứng viên trải qua 2 vòng kiểm tra trước khi được ký hợp đồng thử việc với EIV. Vòng 1 gồm kiểm tra IQ, tiếng Anh và phỏng vấn sơ bộ với Trưởng phòng HCNS; vòng 2 là phỏng vấn với Giám đốc và bộ phận chuyên môn.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["2 vong", "IQ", "tieng Anh", "Giam doc"],
+      "forbidden_phrases": ["3 vong", "khong can phong van"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should describe recruitment screening rounds.",
+        "correctness": "Must state two rounds and identify their main contents."
+      }
+    },
+    {
+      "id": "STNV005",
+      "category": "probation",
+      "query": "Thời hạn thử việc tại EIV là bao lâu theo bằng cấp?",
+      "answer": "Vị trí yêu cầu bằng cấp từ cao đẳng trở lên có thời hạn thử việc 2 tháng. Vị trí yêu cầu từ trung cấp chuyên nghiệp trở xuống có thời hạn thử việc 1 tháng.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["cao dang", "2 thang", "trung cap", "1 thang"],
+      "forbidden_phrases": ["6 thang", "tat ca deu 2 thang"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should explain probation duration by qualification level.",
+        "correctness": "Must distinguish 2 months for college or above and 1 month for intermediate or below."
+      }
+    },
+    {
+      "id": "STNV006",
+      "category": "probation",
+      "query": "Trong thời gian thử việc, nếu nghỉ trong tuần đầu tiên thì có được tính lương không?",
+      "answer": "Không. Theo sổ tay, người lao động nghỉ việc trong 1 tuần đầu tiên của thời gian thử việc sẽ không được tính lương.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["1 tuan dau tien", "khong duoc tinh luong"],
+      "forbidden_phrases": ["duoc tinh du luong"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should address pay when leaving during first probation week.",
+        "correctness": "Must say salary is not counted if leaving in the first week."
+      }
+    },
+    {
+      "id": "STNV007",
+      "category": "training",
+      "query": "Nhân viên chính thức được đào tạo và phát triển như thế nào?",
+      "answer": "Khi trở thành thành viên chính thức của EIV, người lao động được tham gia các khóa đào tạo phù hợp để phát triển và hoàn thiện kỹ năng làm việc. Việc đào tạo do trưởng bộ phận, phòng HCNS hoặc cá nhân đề xuất dựa trên tình hình công việc và năng lực chuyên môn hiện tại.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["thanh vien chinh thuc", "khoa dao tao", "truong bo phan", "HCNS"],
+      "forbidden_phrases": ["chi BGĐ duoc de xuat"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should describe training eligibility and proposal sources.",
+        "correctness": "Must mention official employees, suitable courses, and proposal by manager, HR admin, or individual."
+      }
+    },
+    {
+      "id": "STNV008",
+      "category": "payroll",
+      "query": "Tổng lương thực nhận được tính như thế nào?",
+      "answer": "Tổng lương thực nhận bằng lương căn bản cộng các khoản bổ sung khác ngoài lương nếu có, rồi trừ các khoản khấu trừ.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["luong can ban", "khoan bo sung", "khoan khau tru"],
+      "forbidden_phrases": ["chi bao gom luong can ban"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should state the salary formula.",
+        "correctness": "Must include base salary plus additions minus deductions."
+      }
+    },
+    {
+      "id": "STNV009",
+      "category": "payroll",
+      "query": "Lương thường được chi trả vào ngày nào hằng tháng?",
+      "answer": "Lương được chi trả mỗi tháng 1 hoặc 2 kỳ tùy tình hình kinh doanh. Thông thường, lương được chi trả toàn bộ 1 lần vào ngày 05 hằng tháng; nếu trùng ngày nghỉ lễ, thứ bảy hoặc chủ nhật thì kỳ thanh toán dời đến ngày làm việc kế tiếp.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["ngay 05", "hang thang", "ngay lam viec ke tiep"],
+      "forbidden_phrases": ["ngay 15", "luon tra 2 ky"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should explain normal salary payment timing.",
+        "correctness": "Must mention normal payment on the 5th and next working day if it falls on holiday/weekend."
+      }
+    },
+    {
+      "id": "STNV010",
+      "category": "insurance",
+      "query": "Nhân viên chính thức được tham gia bảo hiểm và công đoàn khi nào?",
+      "answer": "Tất cả người lao động EIV ký HĐLĐ chính thức sau thời gian thử việc đều được công ty tham gia bảo hiểm và tham gia công đoàn theo đúng quy định của Bộ Luật Lao động.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["HDLD chinh thuc", "sau thoi gian thu viec", "bao hiem", "cong doan"],
+      "forbidden_phrases": ["trong ngay dau thu viec"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should state insurance and union eligibility timing.",
+        "correctness": "Must say after probation when signing official labor contract."
+      }
+    },
+    {
+      "id": "STNV011",
+      "category": "insurance",
+      "query": "Mức đóng bảo hiểm xã hội của EIV và nhân viên là bao nhiêu?",
+      "answer": "Đối với bảo hiểm xã hội, EIV đóng 17.5% và nhân viên đóng 8%. Quyền lợi gồm chế độ ốm đau, thai sản, tai nạn lao động, bệnh nghề nghiệp, hưu trí và tử tuất.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["17.5%", "8%", "bao hiem xa hoi"],
+      "forbidden_phrases": ["10%", "5%"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should provide social insurance contribution rates.",
+        "correctness": "Must include EIV 17.5% and employee 8%."
+      }
+    },
+    {
+      "id": "STNV012",
+      "category": "benefits",
+      "query": "Điều kiện để được khám sức khỏe định kỳ hằng năm là gì?",
+      "answer": "Hằng năm, công ty tổ chức khám sức khỏe định kỳ cho tất cả thành viên EIV có HĐLĐ chính thức và có thời gian làm việc từ 6 tháng trở lên. Thời gian và chi phí cụ thể hằng năm do BGĐ quyết định.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["HDLD chinh thuc", "6 thang tro len", "BGD quyet dinh"],
+      "forbidden_phrases": ["tat ca nhan vien thu viec"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should state health-check eligibility.",
+        "correctness": "Must include official labor contract and at least 6 months of work."
+      }
+    },
+    {
+      "id": "STNV013",
+      "category": "benefits",
+      "query": "Công ty tổ chức nghỉ mát, du lịch hằng năm như thế nào?",
+      "answer": "Hằng năm, tùy tình hình tài chính, công ty sẽ tổ chức 1 kỳ du lịch nghỉ mát cho toàn thể thành viên EIV. Thời gian và chi phí dựa trên đề xuất của Phòng HCNS.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["1 ky du lich nghi mat", "tinh hinh tai chinh", "Phong HCNS"],
+      "forbidden_phrases": ["bat buoc 2 ky moi nam"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should describe annual company trip policy.",
+        "correctness": "Must mention one trip depending on finances and HR admin proposal."
+      }
+    },
+    {
+      "id": "STNV014",
+      "category": "benefits",
+      "query": "Thưởng thâm niên tại mốc 3 năm và 5 năm là bao nhiêu?",
+      "answer": "Thưởng thâm niên dành cho thành viên EIV làm việc từ đủ 3 năm trở lên. Mốc 3 năm là 3.000.000 đồng/người kèm kỷ niệm chương; mốc 5 năm là 5.000.000 đồng/người kèm kỷ niệm chương.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["3 nam", "3.000.000", "5 nam", "5.000.000"],
+      "forbidden_phrases": ["1.000.000", "khong co ky niem chuong"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should state seniority reward at 3 and 5 years.",
+        "correctness": "Must include 3,000,000 VND and 5,000,000 VND with commemorative item."
+      }
+    },
+    {
+      "id": "STNV015",
+      "category": "discipline",
+      "query": "Các hình thức kỷ luật trong sổ tay gồm những gì?",
+      "answer": "Sổ tay nêu các hình thức kỷ luật gồm khiển trách bằng miệng; cảnh cáo bằng văn bản và trừ trợ cấp trách nhiệm; cảnh cáo bằng văn bản kèm kéo dài thời gian nâng lương từ 06 tháng đến 01 năm hoặc cách chức tối đa 6 tháng; và buộc thôi việc với vi phạm nghiêm trọng.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["khien trach bang mieng", "canh cao bang van ban", "06 thang den 01 nam", "buoc thoi viec"],
+      "forbidden_phrases": ["phat tien truc tiep"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should summarize disciplinary forms.",
+        "correctness": "Must include oral reprimand, written warning, salary-raise delay/demotion, and dismissal."
+      }
+    },
+    {
+      "id": "STNV016",
+      "category": "working_time",
+      "query": "Thời gian làm việc và nghỉ trưa tại EIV như thế nào?",
+      "answer": "Ngày làm việc là từ thứ 2 đến thứ 6. Giờ làm việc từ 08:30 đến 17:00, nghỉ trưa từ 12h đến 13h30.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["thu 2 den thu 6", "08:30", "17:00", "12h den 13h30"],
+      "forbidden_phrases": ["thu 7", "18:00"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should state workdays, work hours, and lunch break.",
+        "correctness": "Must include Monday-Friday, 08:30-17:00, and lunch 12:00-13:30."
+      }
+    },
+    {
+      "id": "STNV017",
+      "category": "leave",
+      "query": "Nhân viên làm đủ 12 tháng được bao nhiêu ngày phép có hưởng lương?",
+      "answer": "Nhân viên làm việc đủ 12 tháng được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ 12 tháng thì tính theo thực tế số tháng làm việc, mỗi tháng 1 ngày phép.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["du 12 thang", "12 ngay nghi phep", "1 ngay phep/thang"],
+      "forbidden_phrases": ["15 ngay", "2 ngay phep/thang"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should explain annual leave entitlement.",
+        "correctness": "Must include 12 days after 12 months and 1 day per month if not enough 12 months."
+      }
+    },
+    {
+      "id": "STNV018",
+      "category": "leave",
+      "query": "Ngày phép chưa sử dụng hết có được cộng dồn sang năm sau hoặc quy đổi thành tiền không?",
+      "answer": "Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép thì không được cộng dồn sang năm sau và không được quy đổi thành tiền, trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["khong duoc cong don", "khong duoc quy doi thanh tien", "yeu cau cua BGD"],
+      "forbidden_phrases": ["duoc chuyen toi da 5 ngay"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should address unused annual leave.",
+        "correctness": "Must say no carry-over or cash conversion except when work prevents leave by BGĐ request."
+      }
+    },
+    {
+      "id": "STNV019",
+      "category": "leave",
+      "query": "Nếu nghỉ phép dưới 3 ngày thì cần báo trước thế nào?",
+      "answer": "Trường hợp nghỉ dưới 03 ngày, nhân viên cần được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["duoi 03 ngay", "truong bo phan", "Phong HCNS", "truoc 1 ngay"],
+      "forbidden_phrases": ["truoc 3 ngay", "Giam doc phe duyet"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should state short leave notice process.",
+        "correctness": "Must include manager approval and HR notification 1 day before."
+      }
+    },
+    {
+      "id": "STNV020",
+      "category": "leave",
+      "query": "Các ngày nghỉ lễ hằng năm được hưởng nguyên lương gồm bao nhiêu ngày?",
+      "answer": "Hằng năm, tất cả thành viên EIV được nghỉ 10 ngày lễ hưởng nguyên lương, gồm Tết Dương lịch 1 ngày, Tết Âm lịch 5 ngày, Giỗ tổ Hùng Vương 1 ngày, 30/04 1 ngày, 01/05 1 ngày và Quốc khánh 02/09 1 ngày.",
+      "expected_source_titles": ["So_tay_nhan_vien"],
+      "expect_citations": true,
+      "expected_action_type": "none",
+      "required_phrases": ["10 ngay le", "Tet Duong lich", "Tet Am lich", "Quoc khanh"],
+      "forbidden_phrases": ["12 ngay le", "khong huong luong"],
+      "criteria": {
+        "groundedness": "Answer must cite the employee handbook source.",
+        "relevance": "Answer should list annual paid holidays.",
+        "correctness": "Must state 10 paid holidays and include the listed holiday groups."
+      }
+    }
+  ]
+}

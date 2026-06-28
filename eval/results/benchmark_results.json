@@ -1,0 +1,2159 @@
+{
+  "dataset": {
+    "name": "So Tay Nhan Vien Golden Dataset",
+    "version": "2026-06-27",
+    "path": "eval\\golden_dataset.json",
+    "case_count": 20
+  },
+  "app_url": "http://127.0.0.1:8000",
+  "ran_at": "2026-06-27T11:45:29.873585+00:00",
+  "seeded_documents": [],
+  "seed_error": null,
+  "summary": {
+    "total": 20,
+    "passed": 13,
+    "failed": 7,
+    "pass_rate_percent": 65.0,
+    "citation_rate_percent": 80.0,
+    "expected_cited_cases": 20,
+    "actual_cited_cases": 16,
+    "latency_ms": {
+      "p50": 2774.55,
+      "p95": 11277.89,
+      "max": 12409.26,
+      "mean": 3427.99
+    },
+    "ttft_ms": {
+      "p50": 2394.66,
+      "p95": 11199.3,
+      "max": 12254.08,
+      "mean": 3132.55
+    },
+    "scores": {
+      "groundedness": 0.8,
+      "relevance": 0.618,
+      "correctness": 0.927,
+      "answer_similarity": 0.502,
+      "overall": 0.781
+    }
+  },
+  "cases": [
+    {
+      "id": "STNV001",
+      "category": "scope",
+      "query": "Sổ tay nhân viên áp dụng cho những ai?",
+      "expected_answer": "Sổ tay áp dụng cho mọi thành viên có hợp đồng lao động chính thức từ 12 tháng trở lên với Công ty Cổ phần Quốc Tế EIV. Các trường hợp thử việc, hợp đồng dưới 12 tháng, trợ giảng và giáo viên được quy định theo hợp đồng, quyết định hoặc thỏa thuận riêng.",
+      "actual_answer": "Chào bạn, theo mục 1.2 \"Phạm vi áp dụng\" trong Sổ tay nhân viên, các nội dung trong sổ tay áp dụng cho mọi thành viên có hợp đồng lao động chính thức (thời hạn từ 12 tháng trở lên) với Công ty Cổ phần Quốc Tế EIV.\n\nĐối với các trường hợp khác như nhân viên thử việc, hợp đồng lao động dưới 12 tháng, trợ giảng hoặc giáo viên, các quy định sẽ được thực hiện theo hợp đồng lao động riêng, quyết định hoặc thỏa thuận riêng.",
+      "status_code": 200,
+      "ttft_ms": 4062.8395000021555,
+      "latency_ms": 4341.00749999925,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "1.2 - Phạm vi áp dụng",
+          "excerpt": "## Phạm vi áp dụng\n\nCác nội dung trong sổ tay này áp dụng cho mọi thành viên có hợp đồng lao động chính thức (thời hạn 12 tháng trở lên) với Công ty Cổ phần Quốc Tế EIV. Các trường hợp còn lại (thử việc, hợp đồng lao động thời hạn dưới 12 tháng, trợ giảng, giáo viên) được quy định trong hợp đồng lao động riêng hoặc quyết định, thỏa thuận riêng.",
+          "page": null,
+          "score": 0.9546
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "1.1 - Mục đích ban hành",
+          "excerpt": "## Mục đích ban hành\n\nSổ tay này nhằm giúp mọi thành viên của công ty nắm rõ và hiểu được các điều cơ bản, các chính sách, quy định, văn hóa của công ty nhằm thực hiện tốt công việc và tránh các sai phạm.",
+          "page": null,
+          "score": 0.8898
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "LỜI MỞ ĐẦU",
+          "excerpt": "# LỜI MỞ ĐẦU\n\n«»\n\nThay mặt Ban Giám đốc Công ty, tôi rất vui mừng chào đón bạn trở thành thành viên của Công ty Cổ Phần Quốc Tế EIV. Với khả năng và trình độ chuyên môn, bạn đã được tuyển chọn vào làm việc tại Công ty. Tôi tin tưởng rằng chúng ta sẽ cùng nhau xây dựng Công ty Cổ phần Quốc Tế EIV thành công và phát triển bền vững, lâu dài.\n\nChúng ta cùng chia sẻ những cơ hội, thách thức cạnh tranh, sự thành đạt và lợi ích trong tương lai thông qua:\n\n- Các sản phẩm, dịch vụ giáo dục sáng tạo và chất lượng hàng đầu trong bất cứ lĩnh vực kinh doanh nào của Công ty.\n\n- Đội ngũ cán bộ, công nhân viên liêm chính, tận tụy, trung tín và sáng tạo.\n\n- Việc chăm sóc chu đáo các nhu cầu của khách hàng hiện tại và không ngừng vươn tới các thị trường mới.\n\n- Hiệu quả tài chính trong mọi hoạt động của Công ty.\n\nTôi mong đợi bạn sẽ làm việc hết sức mình, nỗ lực cống hiến năng lực của mình để góp phần đạt được hoài bão chung này.\n\nChúng tôi luôn kỳ vọng và tin tưởng mỗi nhân viên sẽ phát huy tối đa tinh thần sáng tạo, khả năng tự hoàn thiện để tạo sức mạnh và động lực thúc đẩy mọi thành viên của Công ty làm việc. Vì thế, chúng tôi ủng hộ tinh thần làm việc hợp tác, tin cậy và cởi mở trong Công ty.\n\nĐây không chỉ là ngày bắt đầu công việc của bạn và mà còn là bước khởi đầu phát triển nghề nghiệp của bạn.\n\nSổ tay nhân viên này nhằm giúp bạn làm quen với những thông tin cần thiết, văn hóa Công ty, các nội quy, quy định và đồng thời cả các quyền lợi và trách nhiệm của bạn trong Công ty. Tôi mong bạn sẽ sử dụng Sổ tay như một nguồn thông tin khi cần thiết.\n\nChúc bạn luôn thành công trong công việc và có một tương lai đầy hứa hẹn tại Công ty chúng ta.\n\nTP.Hồ Chí Minh, ngày 10 tháng 8 năm 2020\n\nĐẠI DIỆN BAN GIÁM ĐỐC",
+          "page": null,
+          "score": 0.8641
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-1",
+          "excerpt": "SỔ TAY NHÂN VIÊN\n\n(Lưu ý: Tài liệu lưu hành nội bộ)\n\nWW",
+          "page": null,
+          "score": 0.8225
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-47",
+          "excerpt": "CHƯƠNG I 3\n\nQUY ĐỊNH CHUNG 3\n\n- Mục đích ban hành 3\n\n- Phạm vi áp dụng 3\n\n- Các từ viết tắt 3",
+          "page": null,
+          "score": 0.8168
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.875,
+        "correctness": 1.0,
+        "answer_similarity": 0.75,
+        "overall": 0.958
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "hop dong lao dong chinh thuc",
+            "12 thang",
+            "thoa thuan rieng"
+          ],
+          "expected": [
+            "hop dong lao dong chinh thuc",
+            "12 thang",
+            "thoa thuan rieng"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV002",
+      "category": "company_profile",
+      "query": "EIV được thành lập năm nào và có trụ sở chính ở đâu?",
+      "expected_answer": "EIV được thành lập năm 2009 trong lĩnh vực giáo dục, có trụ sở chính tại TP.Hồ Chí Minh và văn phòng đại diện tại Hà Nội, TP.Đà Nẵng.",
+      "actual_answer": "Chào An,\n\nEIV được thành lập vào năm 2009. Trụ sở chính của công ty hiện đặt tại địa chỉ: Tầng 6, tòa nhà GalaView, số 59 Cộng Hòa, Phường 4, Quận Tân Bình, TP.HCM.\n\nNếu bạn cần thêm thông tin chi tiết, đừng ngần ngại cho mình biết nhé!",
+      "status_code": 200,
+      "ttft_ms": 963.2172999990871,
+      "latency_ms": 1184.5513000007486,
+      "retry_after_seconds": 0,
+      "citations": [],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 0.0,
+        "relevance": 0.287,
+        "correctness": 0.85,
+        "answer_similarity": 0.325,
+        "overall": 0.379
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": false,
+          "hits": [
+            "2009"
+          ],
+          "expected": [
+            "2009",
+            "TP.Ho Chi Minh",
+            "Ha Noi",
+            "Da Nang"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": false,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": []
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "STNV003",
+      "category": "company_profile",
+      "query": "Khẩu hiệu của EIV là gì?",
+      "expected_answer": "Khẩu hiệu của EIV là: Bring you to the top - Đưa bạn tới đỉnh cao.",
+      "actual_answer": "Chào An, khẩu hiệu (slogan) của EIV là: **\"EIV - Connect to Success\"** (Kết nối để thành công).\n\nNếu bạn cần thêm thông tin về các giá trị cốt lõi hoặc văn hóa công ty, hãy cho mình biết nhé!",
+      "status_code": 200,
+      "ttft_ms": 701.1129999991681,
+      "latency_ms": 812.7516000022297,
+      "retry_after_seconds": 0,
+      "citations": [],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 0.0,
+        "relevance": 0.13,
+        "correctness": 0.8,
+        "answer_similarity": 0.259,
+        "overall": 0.31
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": false,
+          "hits": [],
+          "expected": [
+            "Bring you to the top",
+            "Dua ban toi dinh cao"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": false,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": []
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "STNV004",
+      "category": "recruitment",
+      "query": "Ứng viên phải trải qua mấy vòng kiểm tra trước khi ký hợp đồng thử việc?",
+      "expected_answer": "Mỗi ứng viên trải qua 2 vòng kiểm tra trước khi được ký hợp đồng thử việc với EIV. Vòng 1 gồm kiểm tra IQ, tiếng Anh và phỏng vấn sơ bộ với Trưởng phòng HCNS; vòng 2 là phỏng vấn với Giám đốc và bộ phận chuyên môn.",
+      "actual_answer": "Chào bạn, theo mục 3.1.1 trong Sổ tay nhân viên, mỗi ứng viên phải trải qua 2 vòng kiểm tra trước khi được ký hợp đồng thử việc với EIV.\n\nCụ thể:\n- **Vòng 1:** Kiểm tra IQ, tiếng Anh và phỏng vấn sơ bộ với Trưởng phòng HCNS.\n- **Vòng 2:** Phỏng vấn với Giám đốc và bộ phận chuyên môn mà ứng viên ứng tuyển.\n\nRiêng đối với các vị trí như trợ giảng hoặc làm việc bán thời gian, ứng viên có thể được phỏng vấn trực tiếp với Giám đốc và bộ phận chuyên môn mà không cần kiểm tra IQ, tiếng Anh.",
+      "status_code": 200,
+      "ttft_ms": 3005.307699997502,
+      "latency_ms": 3323.8720999979705,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.1.1 - Tuyển dụng",
+          "excerpt": "### Tuyển dụng\n\nMỗi ứng viên trải qua 2 vòng kiểm tra trước khi được ký hợp đồng thử việc với EIV.\n\nVòng 1: kiểm tra IQ, tiếng Anh, phỏng vấn sơ bộ với Trưởng phòng HCNS.\n\nVòng 2: các ứng viên đạt kết quả ở vòng 1 sẽ được phỏng vấn với Giám đốc và bộ phận chuyên môn mà ứng viên ứng tuyển.\n\nĐối với các ứng viên cho chức danh như trợ giảng, làm việc bán thời gian có thể được\n\ntrực tiếp phỏng vấn với Giám đốc và bộ phận chuyên môn mà không cần kiểm tra IQ, tiếng Anh.\n\nCác ứng viên qua được 2 vòng kiểm tra chuẩn bị ký hợp đồng thử việc phải đảm bảo các yêu cầu cơ bản theo quy định của luật lao động, các yêu cầu về sức khỏe, kỹ năng, kinh nghiệm, phẩm chất đạo đức theo mô tả công việc cụ thể của chức danh ứng tuyển.",
+          "page": null,
+          "score": 0.9817
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.1.2 - Thử việc",
+          "excerpt": "### Thử việc\n\nThời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ cao đẳng trở lên là 2 tháng. Thời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ trung cấp chuyên nghiệp trở xuống là 1 tháng.\n\nPhòng HCNS phụ trách hướng dẫn hội nhập cho người mới bao gồm sinh hoạt các quy định, văn hóa công ty, giới thiệu các nhân sự của EIV và trả lời các thắc mắc về chế độ chính sách của người thử việc.\n\nMỗi người thử việc sẽ được phân công một người hướng dẫn chuyên môn kèm cặp và đánh giá sau thời gian thử việc.\n\nTrong thời gian thử việc, hai bên đều có quyền chấm dứt hợp đồng thử việc nếu cảm thấy không phù hợp. Người lao động nghỉ việc trong 1 tuần đầu tiên sẽ không được tính lương. Trường hợp chấm dứt hợp đồng thử việc mà không ký tiếp hợp đồng chính thức, người lao động có trách nhiệm bàn giao lại công việc và dụng cụ trước khi nghỉ, nếu không sẽ đợi đến khi hoàn thành đủ các thủ tục thì mới được nhận lương của tháng thử việc đó. 3.2. Đào tạo và phát triển\n\nNgười lao động khi đã trở thành thành viên chính thức của EIV sẽ được tham gia các khóa đào tạo phù hợp để phát triển và hoàn thiện kỹ năng làm việc của mình. Việc đào tạo này do trưởng bộ phận, phòng HCNS hoặc cá nhân đề xuất dựa trên tình hình công việc và khả năng chuyên môn hiện tại của người lao động.\n\nĐối với mỗi trường hợp đào tạo sẽ có thỏa thuận về thời gian phục vụ và kết quả làm việc tại EIV và đền bù chi phí nếu thôi việc trước thời hạn.\n\nCác thành viên sẽ được phát triển theo năng lực, đảm bảo vị trí phù hợp với năng lực và sự phấn đấu.",
+          "page": null,
+          "score": 0.7277
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-49",
+          "excerpt": "CHƯƠNG III 4\n\nCÁC QUY TRÌNH, CHÍNH SÁCH, CHẾ ĐỘ 4\n\n- Chính sách tuyển dụng 4\n\n- Tuyển dụng 4\n\n- Thử việc 5\n\n- Đào tạo và phát triển 5\n\n- Tổng thu nhập 5\n\n- Bảo hiểm và phí công đoàn 6\n\n- Phúc lợi 6\n\n- Khám sức khỏe định kỳ 6\n\n- Nghỉ mát, du lịch 6\n\n- Thưởng, chi động viên các ngày lễ, tết, cá nhân 6\n\n- Đề bạt, khen thưởng 7\n\n- Chính sách đề bạt nhân viên 7\n\n- Chính sách khen thưởng, công nhận thành tích 8\n\n- Kỷ luật 8\n\n- Các hình thức kỷ luật 8\n\n- Quy định chi tiết 8\n\n- Cấp một 8\n\n- Cấp ba 9\n\n- Khiếu nại 10",
+          "page": null,
+          "score": 0.6036
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "1.2 - Phạm vi áp dụng",
+          "excerpt": "## Phạm vi áp dụng\n\nCác nội dung trong sổ tay này áp dụng cho mọi thành viên có hợp đồng lao động chính thức (thời hạn 12 tháng trở lên) với Công ty Cổ phần Quốc Tế EIV. Các trường hợp còn lại (thử việc, hợp đồng lao động thời hạn dưới 12 tháng, trợ giảng, giáo viên) được quy định trong hợp đồng lao động riêng hoặc quyết định, thỏa thuận riêng.",
+          "page": null,
+          "score": 0.5367
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "6.1.2 - Công bằng",
+          "excerpt": "### Công bằng\n\nEIV cam kết đối xử Công bằng với nhân viên, điều đó có nghĩa là:\n\nCông bằng trong việc đánh giá năng lực của nhân viên cho dù tồn tại những quan điểm, ý kiến khác nhau trong công việc. Việc tuyển dụng, sắp xếp công việc và xác định mức lương, lợi ích khác cho tất cả nhân viên của EIV được dựa trên cơ sở phù hợp về trách nhiệm, khả năng và thể hiện bản thân, kinh nghiệm cũng như kết quả đánh giá của từng nhân viên.",
+          "page": null,
+          "score": 0.4781
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.799,
+        "correctness": 1.0,
+        "answer_similarity": 0.599,
+        "overall": 0.933
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "2 vong",
+            "IQ",
+            "tieng Anh",
+            "Giam doc"
+          ],
+          "expected": [
+            "2 vong",
+            "IQ",
+            "tieng Anh",
+            "Giam doc"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV005",
+      "category": "probation",
+      "query": "Thời hạn thử việc tại EIV là bao lâu theo bằng cấp?",
+      "expected_answer": "Vị trí yêu cầu bằng cấp từ cao đẳng trở lên có thời hạn thử việc 2 tháng. Vị trí yêu cầu từ trung cấp chuyên nghiệp trở xuống có thời hạn thử việc 1 tháng.",
+      "actual_answer": "Chào bạn, theo mục 3.1.2 trong Sổ tay nhân viên, thời hạn thử việc tại EIV được quy định dựa trên yêu cầu bằng cấp của vị trí như sau:\n\n*   **2 tháng:** Đối với các vị trí yêu cầu bằng cấp từ cao đẳng trở lên.\n*   **1 tháng:** Đối với các vị trí yêu cầu bằng cấp từ trung cấp chuyên nghiệp trở xuống.",
+      "status_code": 200,
+      "ttft_ms": 2365.372500000376,
+      "latency_ms": 2624.128600000404,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.1.2 - Thử việc",
+          "excerpt": "### Thử việc\n\nThời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ cao đẳng trở lên là 2 tháng. Thời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ trung cấp chuyên nghiệp trở xuống là 1 tháng.\n\nPhòng HCNS phụ trách hướng dẫn hội nhập cho người mới bao gồm sinh hoạt các quy định, văn hóa công ty, giới thiệu các nhân sự của EIV và trả lời các thắc mắc về chế độ chính sách của người thử việc.\n\nMỗi người thử việc sẽ được phân công một người hướng dẫn chuyên môn kèm cặp và đánh giá sau thời gian thử việc.\n\nTrong thời gian thử việc, hai bên đều có quyền chấm dứt hợp đồng thử việc nếu cảm thấy không phù hợp. Người lao động nghỉ việc trong 1 tuần đầu tiên sẽ không được tính lương. Trường hợp chấm dứt hợp đồng thử việc mà không ký tiếp hợp đồng chính thức, người lao động có trách nhiệm bàn giao lại công việc và dụng cụ trước khi nghỉ, nếu không sẽ đợi đến khi hoàn thành đủ các thủ tục thì mới được nhận lương của tháng thử việc đó. 3.2. Đào tạo và phát triển\n\nNgười lao động khi đã trở thành thành viên chính thức của EIV sẽ được tham gia các khóa đào tạo phù hợp để phát triển và hoàn thiện kỹ năng làm việc của mình. Việc đào tạo này do trưởng bộ phận, phòng HCNS hoặc cá nhân đề xuất dựa trên tình hình công việc và khả năng chuyên môn hiện tại của người lao động.\n\nĐối với mỗi trường hợp đào tạo sẽ có thỏa thuận về thời gian phục vụ và kết quả làm việc tại EIV và đền bù chi phí nếu thôi việc trước thời hạn.\n\nCác thành viên sẽ được phát triển theo năng lực, đảm bảo vị trí phù hợp với năng lực và sự phấn đấu.",
+          "page": null,
+          "score": 0.9827
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "1.2 - Phạm vi áp dụng",
+          "excerpt": "## Phạm vi áp dụng\n\nCác nội dung trong sổ tay này áp dụng cho mọi thành viên có hợp đồng lao động chính thức (thời hạn 12 tháng trở lên) với Công ty Cổ phần Quốc Tế EIV. Các trường hợp còn lại (thử việc, hợp đồng lao động thời hạn dưới 12 tháng, trợ giảng, giáo viên) được quy định trong hợp đồng lao động riêng hoặc quyết định, thỏa thuận riêng.",
+          "page": null,
+          "score": 0.9086
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.1.1 - Tuyển dụng",
+          "excerpt": "### Tuyển dụng\n\nMỗi ứng viên trải qua 2 vòng kiểm tra trước khi được ký hợp đồng thử việc với EIV.\n\nVòng 1: kiểm tra IQ, tiếng Anh, phỏng vấn sơ bộ với Trưởng phòng HCNS.\n\nVòng 2: các ứng viên đạt kết quả ở vòng 1 sẽ được phỏng vấn với Giám đốc và bộ phận chuyên môn mà ứng viên ứng tuyển.\n\nĐối với các ứng viên cho chức danh như trợ giảng, làm việc bán thời gian có thể được\n\ntrực tiếp phỏng vấn với Giám đốc và bộ phận chuyên môn mà không cần kiểm tra IQ, tiếng Anh.\n\nCác ứng viên qua được 2 vòng kiểm tra chuẩn bị ký hợp đồng thử việc phải đảm bảo các yêu cầu cơ bản theo quy định của luật lao động, các yêu cầu về sức khỏe, kỹ năng, kinh nghiệm, phẩm chất đạo đức theo mô tả công việc cụ thể của chức danh ứng tuyển.",
+          "page": null,
+          "score": 0.806
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "LỜI MỞ ĐẦU",
+          "excerpt": "# LỜI MỞ ĐẦU\n\n«»\n\nThay mặt Ban Giám đốc Công ty, tôi rất vui mừng chào đón bạn trở thành thành viên của Công ty Cổ Phần Quốc Tế EIV. Với khả năng và trình độ chuyên môn, bạn đã được tuyển chọn vào làm việc tại Công ty. Tôi tin tưởng rằng chúng ta sẽ cùng nhau xây dựng Công ty Cổ phần Quốc Tế EIV thành công và phát triển bền vững, lâu dài.\n\nChúng ta cùng chia sẻ những cơ hội, thách thức cạnh tranh, sự thành đạt và lợi ích trong tương lai thông qua:\n\n- Các sản phẩm, dịch vụ giáo dục sáng tạo và chất lượng hàng đầu trong bất cứ lĩnh vực kinh doanh nào của Công ty.\n\n- Đội ngũ cán bộ, công nhân viên liêm chính, tận tụy, trung tín và sáng tạo.\n\n- Việc chăm sóc chu đáo các nhu cầu của khách hàng hiện tại và không ngừng vươn tới các thị trường mới.\n\n- Hiệu quả tài chính trong mọi hoạt động của Công ty.\n\nTôi mong đợi bạn sẽ làm việc hết sức mình, nỗ lực cống hiến năng lực của mình để góp phần đạt được hoài bão chung này.\n\nChúng tôi luôn kỳ vọng và tin tưởng mỗi nhân viên sẽ phát huy tối đa tinh thần sáng tạo, khả năng tự hoàn thiện để tạo sức mạnh và động lực thúc đẩy mọi thành viên của Công ty làm việc. Vì thế, chúng tôi ủng hộ tinh thần làm việc hợp tác, tin cậy và cởi mở trong Công ty.\n\nĐây không chỉ là ngày bắt đầu công việc của bạn và mà còn là bước khởi đầu phát triển nghề nghiệp của bạn.\n\nSổ tay nhân viên này nhằm giúp bạn làm quen với những thông tin cần thiết, văn hóa Công ty, các nội quy, quy định và đồng thời cả các quyền lợi và trách nhiệm của bạn trong Công ty. Tôi mong bạn sẽ sử dụng Sổ tay như một nguồn thông tin khi cần thiết.\n\nChúc bạn luôn thành công trong công việc và có một tương lai đầy hứa hẹn tại Công ty chúng ta.\n\nTP.Hồ Chí Minh, ngày 10 tháng 8 năm 2020\n\nĐẠI DIỆN BAN GIÁM ĐỐC",
+          "page": null,
+          "score": 0.7338
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.4 - Bảo hiểm và phí công đoàn",
+          "excerpt": "3.4. Bảo hiểm và phí công đoàn\n\nTất cả người lao động EIV ký HĐLĐ chính thức (Sau thời gian thử việc) đều được công ty tham gia Bảo hiểm và tham gia công đoàn theo đúng quy định của Bộ Luật Lao động, cụ thể như sau:\n\n| STT | Quỹ Bảo hiểm Thành phần | Mức đóng | Mức đóng | Quyền lợi |\n| --- | --- | --- | --- | --- |\n| STT | Quỹ Bảo hiểm Thành phần | EIV | Nhân viên | Quyền lợi |\n| 1 | Bảo hiểm xã hội | 17.5% | 8% | Chế độ ốm đau, thai sản, tai nạn lao động, bệnh nghề nghiệp, hưu trí, tử tuất |\n| 2 | Bảo hiểm y tế | 3% | 1,5% | Khám chữa bệnh có bảo hiểm y tế |\n| 3 | Bảo hiểm thất nghiệp | 1% | 1% | Trợ cấp thất nghiệp |\n| 4 | Phí công đoàn | 2% | 1% | Tham gia tổ chức công đoàn, được bảo vệ quyền lợi người lao động và tận dụng nguồn quỹ để chi tiêu cho các hoạt động, như: sinh nhật, hiếu hỷ… |\n\nCác khoản nhân viên có nghĩa vụ đóng theo Quy định Pháp luật sẽ được khấu trừ vào lương hằng tháng như tỷ lệ đã nêu ở phần trên.",
+          "page": null,
+          "score": 0.7214
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.795,
+        "correctness": 1.0,
+        "answer_similarity": 0.589,
+        "overall": 0.932
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "cao dang",
+            "2 thang",
+            "trung cap",
+            "1 thang"
+          ],
+          "expected": [
+            "cao dang",
+            "2 thang",
+            "trung cap",
+            "1 thang"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV006",
+      "category": "probation",
+      "query": "Trong thời gian thử việc, nếu nghỉ trong tuần đầu tiên thì có được tính lương không?",
+      "expected_answer": "Không. Theo sổ tay, người lao động nghỉ việc trong 1 tuần đầu tiên của thời gian thử việc sẽ không được tính lương.",
+      "actual_answer": "Chào bạn, theo quy định tại mục 3.1.2 trong \"Sổ tay nhân viên\" về Thử việc, nếu người lao động nghỉ việc trong 1 tuần đầu tiên thì sẽ không được tính lương.",
+      "status_code": 200,
+      "ttft_ms": 11199.302600001829,
+      "latency_ms": 11277.887600001122,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.1.2 - Thử việc",
+          "excerpt": "### Thử việc\n\nThời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ cao đẳng trở lên là 2 tháng. Thời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ trung cấp chuyên nghiệp trở xuống là 1 tháng.\n\nPhòng HCNS phụ trách hướng dẫn hội nhập cho người mới bao gồm sinh hoạt các quy định, văn hóa công ty, giới thiệu các nhân sự của EIV và trả lời các thắc mắc về chế độ chính sách của người thử việc.\n\nMỗi người thử việc sẽ được phân công một người hướng dẫn chuyên môn kèm cặp và đánh giá sau thời gian thử việc.\n\nTrong thời gian thử việc, hai bên đều có quyền chấm dứt hợp đồng thử việc nếu cảm thấy không phù hợp. Người lao động nghỉ việc trong 1 tuần đầu tiên sẽ không được tính lương. Trường hợp chấm dứt hợp đồng thử việc mà không ký tiếp hợp đồng chính thức, người lao động có trách nhiệm bàn giao lại công việc và dụng cụ trước khi nghỉ, nếu không sẽ đợi đến khi hoàn thành đủ các thủ tục thì mới được nhận lương của tháng thử việc đó. 3.2. Đào tạo và phát triển\n\nNgười lao động khi đã trở thành thành viên chính thức của EIV sẽ được tham gia các khóa đào tạo phù hợp để phát triển và hoàn thiện kỹ năng làm việc của mình. Việc đào tạo này do trưởng bộ phận, phòng HCNS hoặc cá nhân đề xuất dựa trên tình hình công việc và khả năng chuyên môn hiện tại của người lao động.\n\nĐối với mỗi trường hợp đào tạo sẽ có thỏa thuận về thời gian phục vụ và kết quả làm việc tại EIV và đền bù chi phí nếu thôi việc trước thời hạn.\n\nCác thành viên sẽ được phát triển theo năng lực, đảm bảo vị trí phù hợp với năng lực và sự phấn đấu.",
+          "page": null,
+          "score": 0.9637
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.2 - Ngày phép, nghỉ phép và nghỉ không hưởng lương",
+          "excerpt": "## Ngày phép, nghỉ phép và nghỉ không hưởng lương\n\nNgày phép\n\nNhân viên làm việc đủ 12 tháng sẽ được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ sẽ tính theo thực tế số tháng làm việc là 1 ngày phép/tháng. Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép sẽ không được tính cộng dồn cho phép năm sau và sẽ không được quy đổi thành tiền trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.\n\nCứ 5 năm làm việc sẽ được cộng thêm 1 ngày phép.\n\nNghỉ phép và nghỉ không hưởng lương\n\nTrường hợp nghỉ dưới 03 ngày: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.\n\nTrường hợp nghỉ phép từ 03 ngày trở lên: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và Giám đốc và báo cho Phòng HCNS trước khi nghỉ 3 ngày.\n\nĐối với các trường hợp nghỉ từ 30 ngày trở lên thì phải nộp đơn xin nghỉ trước 30 ngày và phải có sự đồng ý của Giám đốc.\n\nCác trường hợp ốm đau, có sự cố đột xuất phải báo ngay cho trưởng bộ phận và Phòng HCNS bằng điện thoại và bổ sung đơn hoặc email xin phép sau đó.",
+          "page": null,
+          "score": 0.6989
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-50",
+          "excerpt": "CHƯƠNG IV 10\n\nTHỜI GIAN LÀM VIỆC VÀ NGHỈ NGƠI 10\n\n- Thời gian làm việc 10\n\n- Ngày phép, nghỉ phép và nghỉ không hưởng lương 11\n\n- Ngày nghỉ lễ: 11\n\n- Nghỉ theo chế độ 11",
+          "page": null,
+          "score": 0.6956
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.1 - Thời gian làm việc",
+          "excerpt": "## Thời gian làm việc\n\nNgày làm việc: Từ thứ 2 đến thứ 6.\n\nGiờ làm việc: 08:30 đến 17:00.\n\nNghỉ trưa: Từ 12h đến 13h30.\n\nKhi cần giải quyết công việc có tính chất cấp bách, công ty có thể thỏa thuận nhân viên làm thêm giờ và được tính lương ngoài giờ theo quy định của luật lao động.",
+          "page": null,
+          "score": 0.6856
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.3 - Ngày nghỉ lễ:",
+          "excerpt": "## Ngày nghỉ lễ:\n\nHàng năm, tất cả thành viên EIV đều được nghỉ 10 ngày lễ được hưởng nguyên lương như sau:\n\nTết Dương lịch: 01 ngày (ngày 01/01).\n\nTết Âm lịch: 05 ngày (01 ngày cuối năm cũ và 04 ngày đầu năm mới âm lịch).\n\nNgày Giỗ tổ Hùng Vương: 01 ngày (ngày 10/03 âm lịch);\n\nNgày Giải phóng miền Nam: 01 ngày (ngày 30/04);\n\nNgày Quốc tế lao động: 01 ngày (ngày 01/05);\n\nNgày Quốc khánh: 01 ngày (ngày 02/09).",
+          "page": null,
+          "score": 0.5979
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.852,
+        "correctness": 1.0,
+        "answer_similarity": 0.704,
+        "overall": 0.951
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "1 tuan dau tien",
+            "khong duoc tinh luong"
+          ],
+          "expected": [
+            "1 tuan dau tien",
+            "khong duoc tinh luong"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV007",
+      "category": "training",
+      "query": "Nhân viên chính thức được đào tạo và phát triển như thế nào?",
+      "expected_answer": "Khi trở thành thành viên chính thức của EIV, người lao động được tham gia các khóa đào tạo phù hợp để phát triển và hoàn thiện kỹ năng làm việc. Việc đào tạo do trưởng bộ phận, phòng HCNS hoặc cá nhân đề xuất dựa trên tình hình công việc và năng lực chuyên môn hiện tại.",
+      "actual_answer": "Chào bạn, theo mục 3.2 trong **Sổ tay nhân viên**, khi trở thành nhân viên chính thức, bạn sẽ được tham gia các khóa đào tạo phù hợp để phát triển và hoàn thiện kỹ năng làm việc.\n\nCác điểm chính về quy trình đào tạo và phát triển bao gồm:\n* **Đề xuất đào tạo:** Việc đào tạo được thực hiện dựa trên đề xuất từ trưởng bộ phận, phòng HCNS hoặc chính cá nhân nhân viên, căn cứ vào tình hình công việc và năng lực chuyên môn hiện tại.\n* **Cam kết:** Đối với mỗi khóa đào tạo, sẽ có thỏa thuận về thời gian phục vụ, kết quả làm việc tại EIV và quy định đền bù chi phí nếu bạn thôi việc trước thời hạn.\n* **Lộ trình phát triển:** Nhân viên sẽ được phát triển dựa trên năng lực, đảm bảo vị trí công việc phù hợp với khả năng và sự phấn đấu của bạn.",
+      "status_code": 200,
+      "ttft_ms": 2710.198099997797,
+      "latency_ms": 3298.552899999777,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.1.2 - Thử việc",
+          "excerpt": "### Thử việc\n\nThời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ cao đẳng trở lên là 2 tháng. Thời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ trung cấp chuyên nghiệp trở xuống là 1 tháng.\n\nPhòng HCNS phụ trách hướng dẫn hội nhập cho người mới bao gồm sinh hoạt các quy định, văn hóa công ty, giới thiệu các nhân sự của EIV và trả lời các thắc mắc về chế độ chính sách của người thử việc.\n\nMỗi người thử việc sẽ được phân công một người hướng dẫn chuyên môn kèm cặp và đánh giá sau thời gian thử việc.\n\nTrong thời gian thử việc, hai bên đều có quyền chấm dứt hợp đồng thử việc nếu cảm thấy không phù hợp. Người lao động nghỉ việc trong 1 tuần đầu tiên sẽ không được tính lương. Trường hợp chấm dứt hợp đồng thử việc mà không ký tiếp hợp đồng chính thức, người lao động có trách nhiệm bàn giao lại công việc và dụng cụ trước khi nghỉ, nếu không sẽ đợi đến khi hoàn thành đủ các thủ tục thì mới được nhận lương của tháng thử việc đó. 3.2. Đào tạo và phát triển\n\nNgười lao động khi đã trở thành thành viên chính thức của EIV sẽ được tham gia các khóa đào tạo phù hợp để phát triển và hoàn thiện kỹ năng làm việc của mình. Việc đào tạo này do trưởng bộ phận, phòng HCNS hoặc cá nhân đề xuất dựa trên tình hình công việc và khả năng chuyên môn hiện tại của người lao động.\n\nĐối với mỗi trường hợp đào tạo sẽ có thỏa thuận về thời gian phục vụ và kết quả làm việc tại EIV và đền bù chi phí nếu thôi việc trước thời hạn.\n\nCác thành viên sẽ được phát triển theo năng lực, đảm bảo vị trí phù hợp với năng lực và sự phấn đấu.",
+          "page": null,
+          "score": 0.9613
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-49",
+          "excerpt": "CHƯƠNG III 4\n\nCÁC QUY TRÌNH, CHÍNH SÁCH, CHẾ ĐỘ 4\n\n- Chính sách tuyển dụng 4\n\n- Tuyển dụng 4\n\n- Thử việc 5\n\n- Đào tạo và phát triển 5\n\n- Tổng thu nhập 5\n\n- Bảo hiểm và phí công đoàn 6\n\n- Phúc lợi 6\n\n- Khám sức khỏe định kỳ 6\n\n- Nghỉ mát, du lịch 6\n\n- Thưởng, chi động viên các ngày lễ, tết, cá nhân 6\n\n- Đề bạt, khen thưởng 7\n\n- Chính sách đề bạt nhân viên 7\n\n- Chính sách khen thưởng, công nhận thành tích 8\n\n- Kỷ luật 8\n\n- Các hình thức kỷ luật 8\n\n- Quy định chi tiết 8\n\n- Cấp một 8\n\n- Cấp ba 9\n\n- Khiếu nại 10",
+          "page": null,
+          "score": 0.8173
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "LỜI MỞ ĐẦU",
+          "excerpt": "# LỜI MỞ ĐẦU\n\n«»\n\nThay mặt Ban Giám đốc Công ty, tôi rất vui mừng chào đón bạn trở thành thành viên của Công ty Cổ Phần Quốc Tế EIV. Với khả năng và trình độ chuyên môn, bạn đã được tuyển chọn vào làm việc tại Công ty. Tôi tin tưởng rằng chúng ta sẽ cùng nhau xây dựng Công ty Cổ phần Quốc Tế EIV thành công và phát triển bền vững, lâu dài.\n\nChúng ta cùng chia sẻ những cơ hội, thách thức cạnh tranh, sự thành đạt và lợi ích trong tương lai thông qua:\n\n- Các sản phẩm, dịch vụ giáo dục sáng tạo và chất lượng hàng đầu trong bất cứ lĩnh vực kinh doanh nào của Công ty.\n\n- Đội ngũ cán bộ, công nhân viên liêm chính, tận tụy, trung tín và sáng tạo.\n\n- Việc chăm sóc chu đáo các nhu cầu của khách hàng hiện tại và không ngừng vươn tới các thị trường mới.\n\n- Hiệu quả tài chính trong mọi hoạt động của Công ty.\n\nTôi mong đợi bạn sẽ làm việc hết sức mình, nỗ lực cống hiến năng lực của mình để góp phần đạt được hoài bão chung này.\n\nChúng tôi luôn kỳ vọng và tin tưởng mỗi nhân viên sẽ phát huy tối đa tinh thần sáng tạo, khả năng tự hoàn thiện để tạo sức mạnh và động lực thúc đẩy mọi thành viên của Công ty làm việc. Vì thế, chúng tôi ủng hộ tinh thần làm việc hợp tác, tin cậy và cởi mở trong Công ty.\n\nĐây không chỉ là ngày bắt đầu công việc của bạn và mà còn là bước khởi đầu phát triển nghề nghiệp của bạn.\n\nSổ tay nhân viên này nhằm giúp bạn làm quen với những thông tin cần thiết, văn hóa Công ty, các nội quy, quy định và đồng thời cả các quyền lợi và trách nhiệm của bạn trong Công ty. Tôi mong bạn sẽ sử dụng Sổ tay như một nguồn thông tin khi cần thiết.\n\nChúc bạn luôn thành công trong công việc và có một tương lai đầy hứa hẹn tại Công ty chúng ta.\n\nTP.Hồ Chí Minh, ngày 10 tháng 8 năm 2020\n\nĐẠI DIỆN BAN GIÁM ĐỐC",
+          "page": null,
+          "score": 0.8023
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "2.3 - Sứ mệnh",
+          "excerpt": "## Sứ mệnh\n\nLà đối tác cung cấp và quản lý giáo viên nước ngoài chất lượng cao và đáng tin cậy cho khách hàng: nguồn giáo viên phong phú, quản lý chặt chẽ, chất lượng được chọn lọc, đào tạo kỹ càng.\n\nMang đến chất lượng đào tạo theo chuẩn quốc tế: các giáo viên quốc tế chất lượng làm nền tảng phát triển cho dịch vụ của EIV.\n\n“Chất lượng giáo viên chính là sản phẩm – quản lí chuyên nghiệp chính là dịch vụ của EIV”.\n\nTạo dựng môi trường làm việc chuyên nghiệp, năng động, trẻ trung giúp nhân viên phát triển tốt nhất năng lực bản thân.\n\nSự trưởng thành của công ty đi đôi với lợi ích lâu dài của giáo viên, nhân viên và toàn thể cổ đông. Phát triển kinh doanh nhanh mạnh với sự đa dạng hoá trong lĩnh vực kinh doanh.",
+          "page": null,
+          "score": 0.7941
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "6.1.3 - Tạo môi trường làm việc tốt nhất",
+          "excerpt": "### Tạo môi trường làm việc tốt nhất\n\nEIV sẽ luôn cung cấp và duy trì một môi trường làm việc an ninh, an toàn, lành mạnh và thân thiện. Một môi trường luôn thu hút và giữ chân những người tài năng dù họ có xuất phát điểm khác nhau. Đó là một môi trường mà:\n\nTất cả nhân viên đều có cơ hội khám phá và thể hiện các tiềm năng bản thân ở mức cao nhất cũng như đạt được đích đến của riêng mình để phát triển và đóng góp cho sự thành công của EIV.\n\nTất cả nhân viên đều có điều kiện làm việc tốt nhất trên cả khía cạnh vật chất lẫn tinh thần. Nhân viên được cung cấp không gian làm việc thuận lợi, các trang thiết bị phục vụ công việc cũng như luôn cảm thấy thoải mái để phát huy khả năng và đóng góp ý kiến cá nhân. Một môi trường đảm bảo khía cạnh tinh thần cũng có nghĩa là, trong đó, mỗi nhân viên đều cảm thấy được tôn trọng, mọi người có cơ hội giao lưu, giải trí bất kể những khác biệt cá nhân về tài năng hay cá tính.",
+          "page": null,
+          "score": 0.7824
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.62,
+        "correctness": 0.95,
+        "answer_similarity": 0.491,
+        "overall": 0.857
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "khoa dao tao",
+            "truong bo phan",
+            "HCNS"
+          ],
+          "expected": [
+            "thanh vien chinh thuc",
+            "khoa dao tao",
+            "truong bo phan",
+            "HCNS"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV008",
+      "category": "payroll",
+      "query": "Tổng lương thực nhận được tính như thế nào?",
+      "expected_answer": "Tổng lương thực nhận bằng lương căn bản cộng các khoản bổ sung khác ngoài lương nếu có, rồi trừ các khoản khấu trừ.",
+      "actual_answer": "Chào bạn, theo tài liệu **[1] Sổ tay nhân viên - Mục 3.2 Tổng thu nhập**, công thức tính tổng lương thực nhận của bạn được xác định như sau:\n\n**Tổng lương thực nhận = Lương căn bản + Các khoản bổ sung khác ngoài lương (nếu có) – Các khoản khấu trừ.**\n\nTrong đó, các khoản khấu trừ bao gồm: bảo hiểm y tế, bảo hiểm xã hội, bảo hiểm thất nghiệp, bảo hiểm tai nạn lao động bệnh nghề nghiệp, kinh phí công đoàn, thuế thu nhập cá nhân và các khoản khấu trừ khác (nếu có).",
+      "status_code": 200,
+      "ttft_ms": 2289.538699998957,
+      "latency_ms": 2623.8406999982544,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.2 - Tổng thu nhập",
+          "excerpt": "## Tổng thu nhập\n\nTổng lương thực nhận = Lương căn bản + các khoản bổ sung khác ngoài lương (nếu có) – các khoản khấu trừ.\n\nCác khoản khấu trừ bao gồm: bảo hiểm y tế, bảo hiểm xã hội, bảo hiểm thất nghiệp, bảo hiểm tai nạn lao động bệnh nghề nghiệp, kinh phí công đoàn, thuế thu nhập cá nhân, các khoản khấu trừ khác (nếu có).\n\nLương được chi trả mỗi tháng 01 hoặc 02 kỳ, tùy theo tình hình kinh doanh của EIV. Thông thường sẽ được chi trả toàn bộ 1 lần vào ngày 05 hàng tháng (nếu trùng vào các ngày nghỉ lễ theo qui định của nhà nước, thứ bảy, chủ nhật thì kỳ thanh toán sẽ được dời đến ngày làm việc kế tiếp).",
+          "page": null,
+          "score": 0.9695
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.2 - Ngày phép, nghỉ phép và nghỉ không hưởng lương",
+          "excerpt": "## Ngày phép, nghỉ phép và nghỉ không hưởng lương\n\nNgày phép\n\nNhân viên làm việc đủ 12 tháng sẽ được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ sẽ tính theo thực tế số tháng làm việc là 1 ngày phép/tháng. Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép sẽ không được tính cộng dồn cho phép năm sau và sẽ không được quy đổi thành tiền trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.\n\nCứ 5 năm làm việc sẽ được cộng thêm 1 ngày phép.\n\nNghỉ phép và nghỉ không hưởng lương\n\nTrường hợp nghỉ dưới 03 ngày: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.\n\nTrường hợp nghỉ phép từ 03 ngày trở lên: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và Giám đốc và báo cho Phòng HCNS trước khi nghỉ 3 ngày.\n\nĐối với các trường hợp nghỉ từ 30 ngày trở lên thì phải nộp đơn xin nghỉ trước 30 ngày và phải có sự đồng ý của Giám đốc.\n\nCác trường hợp ốm đau, có sự cố đột xuất phải báo ngay cho trưởng bộ phận và Phòng HCNS bằng điện thoại và bổ sung đơn hoặc email xin phép sau đó.",
+          "page": null,
+          "score": 0.7292
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.1 - Thời gian làm việc",
+          "excerpt": "## Thời gian làm việc\n\nNgày làm việc: Từ thứ 2 đến thứ 6.\n\nGiờ làm việc: 08:30 đến 17:00.\n\nNghỉ trưa: Từ 12h đến 13h30.\n\nKhi cần giải quyết công việc có tính chất cấp bách, công ty có thể thỏa thuận nhân viên làm thêm giờ và được tính lương ngoài giờ theo quy định của luật lao động.",
+          "page": null,
+          "score": 0.7246
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.3.3 - Thưởng, chi động viên các ngày lễ, tết, cá nhân",
+          "excerpt": "### Thưởng, chi động viên các ngày lễ, tết, cá nhân\n\nCác ngày lễ, tết:\n\n- Tết dương lịch ngày 01/01: 200.000 đồng/người.\n\n- Quốc tế phụ nữ ngày 08/3: 100.000 đồng/nhân viên nữ.\n\n- Giổ tỗ Hùng Vương ngày 10/3 âm lịch: tùy theo quyết định của BGĐ.\n\n- Giải phóng miền nam ngày 30/4 và quốc tế lao động ngày 1/5: 200.000 đồng/người.\n\n- Quốc tế thiếu nhi ngày 01/6: Dành cho các thành viên của EIV có con nhỏ từ\n\n13 tuổi trở xuống. Đối với thành viên chỉ có 1 con mức chi là 100.000 đồng/người. Từ con\n\nthứ hai trở đi cộng thêm 100.000 đồng/người.\n\n- Quốc khánh ngày 02/9: 200.000 đồng/người.\n\n- Phụ nữ việt nam ngày 20/10: 100.000 đồng/nhân viên nữ.\n\n- Thành lập công ty: tùy theo tình hình tài chính hàng năm, BGĐ sẽ quyết định\n\nmức thưởng này.\n\n- Tết Âm lịch: tùy theo tình hình tài chính hàng năm, BGĐ sẽ quyết định mức thưởng này.\n\n- Thưởng thâm niên:\n\nDành cho các thành viên của EIV có thời gian làm việc tại công ty từ đủ 3 năm trở lên, mức thưởng cụ thể như sau:\n\n- Kỷ niệm 3 năm đóng góp tại công ty: 3.000.000đ/người + Kỷ niệm chương.\n\n- Kỷ niệm 5 năm đóng góp tại công ty: 5.000.000/người + Kỷ niệm chương.\n\n- Kỷ niệm 7 năm đóng góp tại công ty: 7.000.000/người + Kỷ niệm chương.\n\n- Kỷ niệm 10 năm đóng góp tại công ty: 10.000.000/người + Kỷ niệm chương.\n\nVới thêm mỗi năm một năm thâm niên số tiền thưởng cho chuyến du lịch cùng gia đình sẽ tăng thêm 1.000.000 đồng.\n\nChi cá nhân:\n\n- Sinh nhật: phần quà trị giá 500.000 đồng/lần.\n\n- Thăm hỏi ốm đau: 500.000 đồng/lần.\n\n- Mừng kết hôn: 500.000 đồng/lần.\n\n- Hỗ trợ sinh con: 500.000 đồng/lần.\n\n- Thăm hỏi người thân qua đời: 500.000 đồng/người (đối với tứ thân phụ mẫu “bố mẹ đẻ, bố mẹ vợ hoặc chồng”, vợ, chồng, con ruột).\n\n- Lưu ý: Hình thức chi là chi trực tiếp cho từng cá nhân thuộc đối tượng chi\n\ntheo quy định.",
+          "page": null,
+          "score": 0.7183
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-49",
+          "excerpt": "CHƯƠNG III 4\n\nCÁC QUY TRÌNH, CHÍNH SÁCH, CHẾ ĐỘ 4\n\n- Chính sách tuyển dụng 4\n\n- Tuyển dụng 4\n\n- Thử việc 5\n\n- Đào tạo và phát triển 5\n\n- Tổng thu nhập 5\n\n- Bảo hiểm và phí công đoàn 6\n\n- Phúc lợi 6\n\n- Khám sức khỏe định kỳ 6\n\n- Nghỉ mát, du lịch 6\n\n- Thưởng, chi động viên các ngày lễ, tết, cá nhân 6\n\n- Đề bạt, khen thưởng 7\n\n- Chính sách đề bạt nhân viên 7\n\n- Chính sách khen thưởng, công nhận thành tích 8\n\n- Kỷ luật 8\n\n- Các hình thức kỷ luật 8\n\n- Quy định chi tiết 8\n\n- Cấp một 8\n\n- Cấp ba 9\n\n- Khiếu nại 10",
+          "page": null,
+          "score": 0.6989
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.69,
+        "correctness": 1.0,
+        "answer_similarity": 0.379,
+        "overall": 0.897
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "luong can ban",
+            "khoan bo sung",
+            "khoan khau tru"
+          ],
+          "expected": [
+            "luong can ban",
+            "khoan bo sung",
+            "khoan khau tru"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV009",
+      "category": "payroll",
+      "query": "Lương thường được chi trả vào ngày nào hằng tháng?",
+      "expected_answer": "Lương được chi trả mỗi tháng 1 hoặc 2 kỳ tùy tình hình kinh doanh. Thông thường, lương được chi trả toàn bộ 1 lần vào ngày 05 hằng tháng; nếu trùng ngày nghỉ lễ, thứ bảy hoặc chủ nhật thì kỳ thanh toán dời đến ngày làm việc kế tiếp.",
+      "actual_answer": "Chào bạn, theo tài liệu **Sổ tay nhân viên (mục 3.2 - Tổng thu nhập)**, lương của nhân viên thường được chi trả toàn bộ 1 lần vào ngày 05 hàng tháng.\n\nTrong trường hợp ngày 05 trùng vào ngày nghỉ lễ theo quy định của nhà nước, thứ bảy hoặc chủ nhật, kỳ thanh toán sẽ được dời đến ngày làm việc kế tiếp.",
+      "status_code": 200,
+      "ttft_ms": 2457.6285000002827,
+      "latency_ms": 2719.729300002655,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.2 - Tổng thu nhập",
+          "excerpt": "## Tổng thu nhập\n\nTổng lương thực nhận = Lương căn bản + các khoản bổ sung khác ngoài lương (nếu có) – các khoản khấu trừ.\n\nCác khoản khấu trừ bao gồm: bảo hiểm y tế, bảo hiểm xã hội, bảo hiểm thất nghiệp, bảo hiểm tai nạn lao động bệnh nghề nghiệp, kinh phí công đoàn, thuế thu nhập cá nhân, các khoản khấu trừ khác (nếu có).\n\nLương được chi trả mỗi tháng 01 hoặc 02 kỳ, tùy theo tình hình kinh doanh của EIV. Thông thường sẽ được chi trả toàn bộ 1 lần vào ngày 05 hàng tháng (nếu trùng vào các ngày nghỉ lễ theo qui định của nhà nước, thứ bảy, chủ nhật thì kỳ thanh toán sẽ được dời đến ngày làm việc kế tiếp).",
+          "page": null,
+          "score": 0.92
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.2 - Ngày phép, nghỉ phép và nghỉ không hưởng lương",
+          "excerpt": "## Ngày phép, nghỉ phép và nghỉ không hưởng lương\n\nNgày phép\n\nNhân viên làm việc đủ 12 tháng sẽ được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ sẽ tính theo thực tế số tháng làm việc là 1 ngày phép/tháng. Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép sẽ không được tính cộng dồn cho phép năm sau và sẽ không được quy đổi thành tiền trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.\n\nCứ 5 năm làm việc sẽ được cộng thêm 1 ngày phép.\n\nNghỉ phép và nghỉ không hưởng lương\n\nTrường hợp nghỉ dưới 03 ngày: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.\n\nTrường hợp nghỉ phép từ 03 ngày trở lên: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và Giám đốc và báo cho Phòng HCNS trước khi nghỉ 3 ngày.\n\nĐối với các trường hợp nghỉ từ 30 ngày trở lên thì phải nộp đơn xin nghỉ trước 30 ngày và phải có sự đồng ý của Giám đốc.\n\nCác trường hợp ốm đau, có sự cố đột xuất phải báo ngay cho trưởng bộ phận và Phòng HCNS bằng điện thoại và bổ sung đơn hoặc email xin phép sau đó.",
+          "page": null,
+          "score": 0.6184
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-50",
+          "excerpt": "CHƯƠNG IV 10\n\nTHỜI GIAN LÀM VIỆC VÀ NGHỈ NGƠI 10\n\n- Thời gian làm việc 10\n\n- Ngày phép, nghỉ phép và nghỉ không hưởng lương 11\n\n- Ngày nghỉ lễ: 11\n\n- Nghỉ theo chế độ 11",
+          "page": null,
+          "score": 0.611
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.1.2 - Thử việc",
+          "excerpt": "### Thử việc\n\nThời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ cao đẳng trở lên là 2 tháng. Thời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ trung cấp chuyên nghiệp trở xuống là 1 tháng.\n\nPhòng HCNS phụ trách hướng dẫn hội nhập cho người mới bao gồm sinh hoạt các quy định, văn hóa công ty, giới thiệu các nhân sự của EIV và trả lời các thắc mắc về chế độ chính sách của người thử việc.\n\nMỗi người thử việc sẽ được phân công một người hướng dẫn chuyên môn kèm cặp và đánh giá sau thời gian thử việc.\n\nTrong thời gian thử việc, hai bên đều có quyền chấm dứt hợp đồng thử việc nếu cảm thấy không phù hợp. Người lao động nghỉ việc trong 1 tuần đầu tiên sẽ không được tính lương. Trường hợp chấm dứt hợp đồng thử việc mà không ký tiếp hợp đồng chính thức, người lao động có trách nhiệm bàn giao lại công việc và dụng cụ trước khi nghỉ, nếu không sẽ đợi đến khi hoàn thành đủ các thủ tục thì mới được nhận lương của tháng thử việc đó. 3.2. Đào tạo và phát triển\n\nNgười lao động khi đã trở thành thành viên chính thức của EIV sẽ được tham gia các khóa đào tạo phù hợp để phát triển và hoàn thiện kỹ năng làm việc của mình. Việc đào tạo này do trưởng bộ phận, phòng HCNS hoặc cá nhân đề xuất dựa trên tình hình công việc và khả năng chuyên môn hiện tại của người lao động.\n\nĐối với mỗi trường hợp đào tạo sẽ có thỏa thuận về thời gian phục vụ và kết quả làm việc tại EIV và đền bù chi phí nếu thôi việc trước thời hạn.\n\nCác thành viên sẽ được phát triển theo năng lực, đảm bảo vị trí phù hợp với năng lực và sự phấn đấu.",
+          "page": null,
+          "score": 0.6092
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.3 - Ngày nghỉ lễ:",
+          "excerpt": "## Ngày nghỉ lễ:\n\nHàng năm, tất cả thành viên EIV đều được nghỉ 10 ngày lễ được hưởng nguyên lương như sau:\n\nTết Dương lịch: 01 ngày (ngày 01/01).\n\nTết Âm lịch: 05 ngày (01 ngày cuối năm cũ và 04 ngày đầu năm mới âm lịch).\n\nNgày Giỗ tổ Hùng Vương: 01 ngày (ngày 10/03 âm lịch);\n\nNgày Giải phóng miền Nam: 01 ngày (ngày 30/04);\n\nNgày Quốc tế lao động: 01 ngày (ngày 01/05);\n\nNgày Quốc khánh: 01 ngày (ngày 02/09).",
+          "page": null,
+          "score": 0.5979
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.8,
+        "correctness": 1.0,
+        "answer_similarity": 0.6,
+        "overall": 0.933
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "ngay 05",
+            "hang thang",
+            "ngay lam viec ke tiep"
+          ],
+          "expected": [
+            "ngay 05",
+            "hang thang",
+            "ngay lam viec ke tiep"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV010",
+      "category": "insurance",
+      "query": "Nhân viên chính thức được tham gia bảo hiểm và công đoàn khi nào?",
+      "expected_answer": "Tất cả người lao động EIV ký HĐLĐ chính thức sau thời gian thử việc đều được công ty tham gia bảo hiểm và tham gia công đoàn theo đúng quy định của Bộ Luật Lao động.",
+      "actual_answer": "Chào bạn, theo tài liệu **Sổ tay nhân viên (mục 3.4 - Bảo hiểm và phí công đoàn)**, tất cả người lao động ký hợp đồng lao động chính thức với EIV (sau khi kết thúc thời gian thử việc) sẽ được công ty tham gia bảo hiểm và tham gia công đoàn theo quy định.",
+      "status_code": 200,
+      "ttft_ms": 2615.3837999991083,
+      "latency_ms": 2829.364400000486,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.4 - Bảo hiểm và phí công đoàn",
+          "excerpt": "3.4. Bảo hiểm và phí công đoàn\n\nTất cả người lao động EIV ký HĐLĐ chính thức (Sau thời gian thử việc) đều được công ty tham gia Bảo hiểm và tham gia công đoàn theo đúng quy định của Bộ Luật Lao động, cụ thể như sau:\n\n| STT | Quỹ Bảo hiểm Thành phần | Mức đóng | Mức đóng | Quyền lợi |\n| --- | --- | --- | --- | --- |\n| STT | Quỹ Bảo hiểm Thành phần | EIV | Nhân viên | Quyền lợi |\n| 1 | Bảo hiểm xã hội | 17.5% | 8% | Chế độ ốm đau, thai sản, tai nạn lao động, bệnh nghề nghiệp, hưu trí, tử tuất |\n| 2 | Bảo hiểm y tế | 3% | 1,5% | Khám chữa bệnh có bảo hiểm y tế |\n| 3 | Bảo hiểm thất nghiệp | 1% | 1% | Trợ cấp thất nghiệp |\n| 4 | Phí công đoàn | 2% | 1% | Tham gia tổ chức công đoàn, được bảo vệ quyền lợi người lao động và tận dụng nguồn quỹ để chi tiêu cho các hoạt động, như: sinh nhật, hiếu hỷ… |\n\nCác khoản nhân viên có nghĩa vụ đóng theo Quy định Pháp luật sẽ được khấu trừ vào lương hằng tháng như tỷ lệ đã nêu ở phần trên.",
+          "page": null,
+          "score": 0.9518
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.1.2 - Thử việc",
+          "excerpt": "### Thử việc\n\nThời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ cao đẳng trở lên là 2 tháng. Thời hạn thử việc đối với các vị trí yêu cầu bằng cấp từ trung cấp chuyên nghiệp trở xuống là 1 tháng.\n\nPhòng HCNS phụ trách hướng dẫn hội nhập cho người mới bao gồm sinh hoạt các quy định, văn hóa công ty, giới thiệu các nhân sự của EIV và trả lời các thắc mắc về chế độ chính sách của người thử việc.\n\nMỗi người thử việc sẽ được phân công một người hướng dẫn chuyên môn kèm cặp và đánh giá sau thời gian thử việc.\n\nTrong thời gian thử việc, hai bên đều có quyền chấm dứt hợp đồng thử việc nếu cảm thấy không phù hợp. Người lao động nghỉ việc trong 1 tuần đầu tiên sẽ không được tính lương. Trường hợp chấm dứt hợp đồng thử việc mà không ký tiếp hợp đồng chính thức, người lao động có trách nhiệm bàn giao lại công việc và dụng cụ trước khi nghỉ, nếu không sẽ đợi đến khi hoàn thành đủ các thủ tục thì mới được nhận lương của tháng thử việc đó. 3.2. Đào tạo và phát triển\n\nNgười lao động khi đã trở thành thành viên chính thức của EIV sẽ được tham gia các khóa đào tạo phù hợp để phát triển và hoàn thiện kỹ năng làm việc của mình. Việc đào tạo này do trưởng bộ phận, phòng HCNS hoặc cá nhân đề xuất dựa trên tình hình công việc và khả năng chuyên môn hiện tại của người lao động.\n\nĐối với mỗi trường hợp đào tạo sẽ có thỏa thuận về thời gian phục vụ và kết quả làm việc tại EIV và đền bù chi phí nếu thôi việc trước thời hạn.\n\nCác thành viên sẽ được phát triển theo năng lực, đảm bảo vị trí phù hợp với năng lực và sự phấn đấu.",
+          "page": null,
+          "score": 0.7038
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-49",
+          "excerpt": "CHƯƠNG III 4\n\nCÁC QUY TRÌNH, CHÍNH SÁCH, CHẾ ĐỘ 4\n\n- Chính sách tuyển dụng 4\n\n- Tuyển dụng 4\n\n- Thử việc 5\n\n- Đào tạo và phát triển 5\n\n- Tổng thu nhập 5\n\n- Bảo hiểm và phí công đoàn 6\n\n- Phúc lợi 6\n\n- Khám sức khỏe định kỳ 6\n\n- Nghỉ mát, du lịch 6\n\n- Thưởng, chi động viên các ngày lễ, tết, cá nhân 6\n\n- Đề bạt, khen thưởng 7\n\n- Chính sách đề bạt nhân viên 7\n\n- Chính sách khen thưởng, công nhận thành tích 8\n\n- Kỷ luật 8\n\n- Các hình thức kỷ luật 8\n\n- Quy định chi tiết 8\n\n- Cấp một 8\n\n- Cấp ba 9\n\n- Khiếu nại 10",
+          "page": null,
+          "score": 0.6788
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "1.2 - Phạm vi áp dụng",
+          "excerpt": "## Phạm vi áp dụng\n\nCác nội dung trong sổ tay này áp dụng cho mọi thành viên có hợp đồng lao động chính thức (thời hạn 12 tháng trở lên) với Công ty Cổ phần Quốc Tế EIV. Các trường hợp còn lại (thử việc, hợp đồng lao động thời hạn dưới 12 tháng, trợ giảng, giáo viên) được quy định trong hợp đồng lao động riêng hoặc quyết định, thỏa thuận riêng.",
+          "page": null,
+          "score": 0.6788
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.3.1 - Khám sức khỏe định kỳ",
+          "excerpt": "### Khám sức khỏe định kỳ\n\nHàng năm, công ty tổ chức khám sức khỏe định kỳ cho tất cả thành viên của EIV có HĐLĐ chính thức và có thời gian làm việc từ 6 tháng trở lên. Thời gian và chi phí cụ thể hàng năm tùy theo BGĐ quyết định.",
+          "page": null,
+          "score": 0.6457
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.591,
+        "correctness": 0.9,
+        "answer_similarity": 0.681,
+        "overall": 0.83
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": false,
+          "hits": [
+            "bao hiem",
+            "cong doan"
+          ],
+          "expected": [
+            "HDLD chinh thuc",
+            "sau thoi gian thu viec",
+            "bao hiem",
+            "cong doan"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "STNV011",
+      "category": "insurance",
+      "query": "Mức đóng bảo hiểm xã hội của EIV và nhân viên là bao nhiêu?",
+      "expected_answer": "Đối với bảo hiểm xã hội, EIV đóng 17.5% và nhân viên đóng 8%. Quyền lợi gồm chế độ ốm đau, thai sản, tai nạn lao động, bệnh nghề nghiệp, hưu trí và tử tuất.",
+      "actual_answer": "Số ngày phép còn lại của bạn là 8.5. Trạng thái bảo hiểm: Đang hiệu lực. Xét duyệt khen thưởng: Đang xét.",
+      "status_code": 200,
+      "ttft_ms": 14.298800000688061,
+      "latency_ms": 27.058499999839114,
+      "retry_after_seconds": 23,
+      "citations": [],
+      "actions": [
+        {
+          "type": "hr_metric_lookup",
+          "label": "Số liệu nhân sự cá nhân",
+          "data": {
+            "employee_id": "emp-001",
+            "leave_days_remaining": 8.5,
+            "insurance_status": "active",
+            "reward_review_status": "in_review",
+            "as_of_date": "2026-06-27"
+          }
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 0.0,
+        "relevance": 0.221,
+        "correctness": 0.467,
+        "answer_similarity": 0.109,
+        "overall": 0.229
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": false,
+          "hits": [
+            "8%"
+          ],
+          "expected": [
+            "17.5%",
+            "8%",
+            "bao hiem xa hoi"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": false,
+          "hits": [
+            "5%"
+          ]
+        },
+        "citations": {
+          "passed": false,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": []
+        },
+        "action_type": {
+          "passed": false,
+          "expected": "none",
+          "actual": "hr_metric_lookup"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "STNV012",
+      "category": "benefits",
+      "query": "Điều kiện để được khám sức khỏe định kỳ hằng năm là gì?",
+      "expected_answer": "Hằng năm, công ty tổ chức khám sức khỏe định kỳ cho tất cả thành viên EIV có HĐLĐ chính thức và có thời gian làm việc từ 6 tháng trở lên. Thời gian và chi phí cụ thể hằng năm do BGĐ quyết định.",
+      "actual_answer": "Chào bạn Nguyễn Văn An,\n\nTheo quy định hiện hành, tất cả nhân viên chính thức có tên trong danh sách nhân sự tại thời điểm tổ chức đều được tham gia khám sức khỏe định kỳ hằng năm.\n\nTuy nhiên, để biết chi tiết về các hạng mục khám cụ thể hoặc trường hợp đặc thù, bạn vui lòng cung cấp thêm thông tin hoặc kiểm tra lại **Sổ tay nhân viên/Chính sách phúc lợi** của công ty. Nếu bạn không tìm thấy tài liệu này, hãy cho mình biết để mình tạo ticket gửi bộ phận HR hỗ trợ bạn nhé!",
+      "status_code": 200,
+      "ttft_ms": 1052.883499996824,
+      "latency_ms": 1464.6622999971441,
+      "retry_after_seconds": 4,
+      "citations": [],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 0.0,
+        "relevance": 0.169,
+        "correctness": 0.8,
+        "answer_similarity": 0.338,
+        "overall": 0.323
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": false,
+          "hits": [],
+          "expected": [
+            "HDLD chinh thuc",
+            "6 thang tro len",
+            "BGD quyet dinh"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": false,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": []
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "STNV013",
+      "category": "benefits",
+      "query": "Công ty tổ chức nghỉ mát, du lịch hằng năm như thế nào?",
+      "expected_answer": "Hằng năm, tùy tình hình tài chính, công ty sẽ tổ chức 1 kỳ du lịch nghỉ mát cho toàn thể thành viên EIV. Thời gian và chi phí dựa trên đề xuất của Phòng HCNS.",
+      "actual_answer": "Chào bạn, về việc tổ chức nghỉ mát, du lịch hằng năm, công ty có quy định như sau theo tài liệu [1] Sổ tay nhân viên (mục 3.3.2):\n\nHằng năm, tùy thuộc vào tình hình tài chính, công ty sẽ tổ chức 01 kỳ du lịch nghỉ mát cho toàn thể thành viên EIV. Thời gian và chi phí cụ thể cho chuyến đi sẽ dựa trên đề xuất của Phòng HCNS.\n\nNếu bạn cần biết thêm thông tin chi tiết về thời gian hoặc kế hoạch cụ thể của năm nay, vui lòng liên hệ trực tiếp với bộ phận HR để được hỗ trợ nhé.",
+      "status_code": 200,
+      "ttft_ms": 2367.7465000000666,
+      "latency_ms": 2685.7745999986946,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.3.2 - Nghỉ mát, du lịch",
+          "excerpt": "### Nghỉ mát, du lịch\n\nHàng năm, tùy tình hình tài chính, công ty sẽ tổ chức 1 kỳ du lịch nghỉ mát cho toàn thể thành viên EIV. Thời gian và chi phí dựa trên đề xuất của Phòng HCNS.",
+          "page": null,
+          "score": 0.9619
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.3.1 - Khám sức khỏe định kỳ",
+          "excerpt": "### Khám sức khỏe định kỳ\n\nHàng năm, công ty tổ chức khám sức khỏe định kỳ cho tất cả thành viên của EIV có HĐLĐ chính thức và có thời gian làm việc từ 6 tháng trở lên. Thời gian và chi phí cụ thể hàng năm tùy theo BGĐ quyết định.",
+          "page": null,
+          "score": 0.7784
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.3.3 - Thưởng, chi động viên các ngày lễ, tết, cá nhân",
+          "excerpt": "### Thưởng, chi động viên các ngày lễ, tết, cá nhân\n\nCác ngày lễ, tết:\n\n- Tết dương lịch ngày 01/01: 200.000 đồng/người.\n\n- Quốc tế phụ nữ ngày 08/3: 100.000 đồng/nhân viên nữ.\n\n- Giổ tỗ Hùng Vương ngày 10/3 âm lịch: tùy theo quyết định của BGĐ.\n\n- Giải phóng miền nam ngày 30/4 và quốc tế lao động ngày 1/5: 200.000 đồng/người.\n\n- Quốc tế thiếu nhi ngày 01/6: Dành cho các thành viên của EIV có con nhỏ từ\n\n13 tuổi trở xuống. Đối với thành viên chỉ có 1 con mức chi là 100.000 đồng/người. Từ con\n\nthứ hai trở đi cộng thêm 100.000 đồng/người.\n\n- Quốc khánh ngày 02/9: 200.000 đồng/người.\n\n- Phụ nữ việt nam ngày 20/10: 100.000 đồng/nhân viên nữ.\n\n- Thành lập công ty: tùy theo tình hình tài chính hàng năm, BGĐ sẽ quyết định\n\nmức thưởng này.\n\n- Tết Âm lịch: tùy theo tình hình tài chính hàng năm, BGĐ sẽ quyết định mức thưởng này.\n\n- Thưởng thâm niên:\n\nDành cho các thành viên của EIV có thời gian làm việc tại công ty từ đủ 3 năm trở lên, mức thưởng cụ thể như sau:\n\n- Kỷ niệm 3 năm đóng góp tại công ty: 3.000.000đ/người + Kỷ niệm chương.\n\n- Kỷ niệm 5 năm đóng góp tại công ty: 5.000.000/người + Kỷ niệm chương.\n\n- Kỷ niệm 7 năm đóng góp tại công ty: 7.000.000/người + Kỷ niệm chương.\n\n- Kỷ niệm 10 năm đóng góp tại công ty: 10.000.000/người + Kỷ niệm chương.\n\nVới thêm mỗi năm một năm thâm niên số tiền thưởng cho chuyến du lịch cùng gia đình sẽ tăng thêm 1.000.000 đồng.\n\nChi cá nhân:\n\n- Sinh nhật: phần quà trị giá 500.000 đồng/lần.\n\n- Thăm hỏi ốm đau: 500.000 đồng/lần.\n\n- Mừng kết hôn: 500.000 đồng/lần.\n\n- Hỗ trợ sinh con: 500.000 đồng/lần.\n\n- Thăm hỏi người thân qua đời: 500.000 đồng/người (đối với tứ thân phụ mẫu “bố mẹ đẻ, bố mẹ vợ hoặc chồng”, vợ, chồng, con ruột).\n\n- Lưu ý: Hình thức chi là chi trực tiếp cho từng cá nhân thuộc đối tượng chi\n\ntheo quy định.",
+          "page": null,
+          "score": 0.7674
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-49",
+          "excerpt": "CHƯƠNG III 4\n\nCÁC QUY TRÌNH, CHÍNH SÁCH, CHẾ ĐỘ 4\n\n- Chính sách tuyển dụng 4\n\n- Tuyển dụng 4\n\n- Thử việc 5\n\n- Đào tạo và phát triển 5\n\n- Tổng thu nhập 5\n\n- Bảo hiểm và phí công đoàn 6\n\n- Phúc lợi 6\n\n- Khám sức khỏe định kỳ 6\n\n- Nghỉ mát, du lịch 6\n\n- Thưởng, chi động viên các ngày lễ, tết, cá nhân 6\n\n- Đề bạt, khen thưởng 7\n\n- Chính sách đề bạt nhân viên 7\n\n- Chính sách khen thưởng, công nhận thành tích 8\n\n- Kỷ luật 8\n\n- Các hình thức kỷ luật 8\n\n- Quy định chi tiết 8\n\n- Cấp một 8\n\n- Cấp ba 9\n\n- Khiếu nại 10",
+          "page": null,
+          "score": 0.7323
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.3 - Ngày nghỉ lễ:",
+          "excerpt": "## Ngày nghỉ lễ:\n\nHàng năm, tất cả thành viên EIV đều được nghỉ 10 ngày lễ được hưởng nguyên lương như sau:\n\nTết Dương lịch: 01 ngày (ngày 01/01).\n\nTết Âm lịch: 05 ngày (01 ngày cuối năm cũ và 04 ngày đầu năm mới âm lịch).\n\nNgày Giỗ tổ Hùng Vương: 01 ngày (ngày 10/03 âm lịch);\n\nNgày Giải phóng miền Nam: 01 ngày (ngày 30/04);\n\nNgày Quốc tế lao động: 01 ngày (ngày 01/05);\n\nNgày Quốc khánh: 01 ngày (ngày 02/09).",
+          "page": null,
+          "score": 0.672
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.748,
+        "correctness": 1.0,
+        "answer_similarity": 0.496,
+        "overall": 0.916
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "1 ky du lich nghi mat",
+            "tinh hinh tai chinh",
+            "Phong HCNS"
+          ],
+          "expected": [
+            "1 ky du lich nghi mat",
+            "tinh hinh tai chinh",
+            "Phong HCNS"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV014",
+      "category": "benefits",
+      "query": "Thưởng thâm niên tại mốc 3 năm và 5 năm là bao nhiêu?",
+      "expected_answer": "Thưởng thâm niên dành cho thành viên EIV làm việc từ đủ 3 năm trở lên. Mốc 3 năm là 3.000.000 đồng/người kèm kỷ niệm chương; mốc 5 năm là 5.000.000 đồng/người kèm kỷ niệm chương.",
+      "actual_answer": "Chào bạn, theo tài liệu **Sổ tay nhân viên (mục 3.3.3 - Thưởng thâm niên)**, mức thưởng thâm niên tại các mốc như sau:\n\n*   **Kỷ niệm 3 năm đóng góp:** 3.000.000 đồng/người kèm kỷ niệm chương.\n*   **Kỷ niệm 5 năm đóng góp:** 5.000.000 đồng/người kèm kỷ niệm chương.",
+      "status_code": 200,
+      "ttft_ms": 2798.8301000004867,
+      "latency_ms": 3076.696500000253,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.3.3 - Thưởng, chi động viên các ngày lễ, tết, cá nhân",
+          "excerpt": "### Thưởng, chi động viên các ngày lễ, tết, cá nhân\n\nCác ngày lễ, tết:\n\n- Tết dương lịch ngày 01/01: 200.000 đồng/người.\n\n- Quốc tế phụ nữ ngày 08/3: 100.000 đồng/nhân viên nữ.\n\n- Giổ tỗ Hùng Vương ngày 10/3 âm lịch: tùy theo quyết định của BGĐ.\n\n- Giải phóng miền nam ngày 30/4 và quốc tế lao động ngày 1/5: 200.000 đồng/người.\n\n- Quốc tế thiếu nhi ngày 01/6: Dành cho các thành viên của EIV có con nhỏ từ\n\n13 tuổi trở xuống. Đối với thành viên chỉ có 1 con mức chi là 100.000 đồng/người. Từ con\n\nthứ hai trở đi cộng thêm 100.000 đồng/người.\n\n- Quốc khánh ngày 02/9: 200.000 đồng/người.\n\n- Phụ nữ việt nam ngày 20/10: 100.000 đồng/nhân viên nữ.\n\n- Thành lập công ty: tùy theo tình hình tài chính hàng năm, BGĐ sẽ quyết định\n\nmức thưởng này.\n\n- Tết Âm lịch: tùy theo tình hình tài chính hàng năm, BGĐ sẽ quyết định mức thưởng này.\n\n- Thưởng thâm niên:\n\nDành cho các thành viên của EIV có thời gian làm việc tại công ty từ đủ 3 năm trở lên, mức thưởng cụ thể như sau:\n\n- Kỷ niệm 3 năm đóng góp tại công ty: 3.000.000đ/người + Kỷ niệm chương.\n\n- Kỷ niệm 5 năm đóng góp tại công ty: 5.000.000/người + Kỷ niệm chương.\n\n- Kỷ niệm 7 năm đóng góp tại công ty: 7.000.000/người + Kỷ niệm chương.\n\n- Kỷ niệm 10 năm đóng góp tại công ty: 10.000.000/người + Kỷ niệm chương.\n\nVới thêm mỗi năm một năm thâm niên số tiền thưởng cho chuyến du lịch cùng gia đình sẽ tăng thêm 1.000.000 đồng.\n\nChi cá nhân:\n\n- Sinh nhật: phần quà trị giá 500.000 đồng/lần.\n\n- Thăm hỏi ốm đau: 500.000 đồng/lần.\n\n- Mừng kết hôn: 500.000 đồng/lần.\n\n- Hỗ trợ sinh con: 500.000 đồng/lần.\n\n- Thăm hỏi người thân qua đời: 500.000 đồng/người (đối với tứ thân phụ mẫu “bố mẹ đẻ, bố mẹ vợ hoặc chồng”, vợ, chồng, con ruột).\n\n- Lưu ý: Hình thức chi là chi trực tiếp cho từng cá nhân thuộc đối tượng chi\n\ntheo quy định.",
+          "page": null,
+          "score": 0.9596
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.4.2 - Chính sách khen thưởng, công nhận thành tích",
+          "excerpt": "### Chính sách khen thưởng, công nhận thành tích\n\nThực hiện định hướng quản lý theo mục tiêu và theo dự án, Công ty có chính sách khen thưởng, công nhận thành tích cá nhân sau khi đánh giá kết qủa công việc trong từng giai đoạn hoặc trong từng dự án.\n\nViệc thừa nhận thành tích chỉ thuần túy dựa vào kết quả công việc và khả năng hoàn thành công việc của cá nhân.\n\nViệc xem xét công nhận thành tích có thể thực hiện bằng đề cử nâng bậc công tác, nâng mức lương, khen thưởng hoặc kỷ luật.",
+          "page": null,
+          "score": 0.6668
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-49",
+          "excerpt": "CHƯƠNG III 4\n\nCÁC QUY TRÌNH, CHÍNH SÁCH, CHẾ ĐỘ 4\n\n- Chính sách tuyển dụng 4\n\n- Tuyển dụng 4\n\n- Thử việc 5\n\n- Đào tạo và phát triển 5\n\n- Tổng thu nhập 5\n\n- Bảo hiểm và phí công đoàn 6\n\n- Phúc lợi 6\n\n- Khám sức khỏe định kỳ 6\n\n- Nghỉ mát, du lịch 6\n\n- Thưởng, chi động viên các ngày lễ, tết, cá nhân 6\n\n- Đề bạt, khen thưởng 7\n\n- Chính sách đề bạt nhân viên 7\n\n- Chính sách khen thưởng, công nhận thành tích 8\n\n- Kỷ luật 8\n\n- Các hình thức kỷ luật 8\n\n- Quy định chi tiết 8\n\n- Cấp một 8\n\n- Cấp ba 9\n\n- Khiếu nại 10",
+          "page": null,
+          "score": 0.6581
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.2 - Ngày phép, nghỉ phép và nghỉ không hưởng lương",
+          "excerpt": "## Ngày phép, nghỉ phép và nghỉ không hưởng lương\n\nNgày phép\n\nNhân viên làm việc đủ 12 tháng sẽ được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ sẽ tính theo thực tế số tháng làm việc là 1 ngày phép/tháng. Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép sẽ không được tính cộng dồn cho phép năm sau và sẽ không được quy đổi thành tiền trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.\n\nCứ 5 năm làm việc sẽ được cộng thêm 1 ngày phép.\n\nNghỉ phép và nghỉ không hưởng lương\n\nTrường hợp nghỉ dưới 03 ngày: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.\n\nTrường hợp nghỉ phép từ 03 ngày trở lên: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và Giám đốc và báo cho Phòng HCNS trước khi nghỉ 3 ngày.\n\nĐối với các trường hợp nghỉ từ 30 ngày trở lên thì phải nộp đơn xin nghỉ trước 30 ngày và phải có sự đồng ý của Giám đốc.\n\nCác trường hợp ốm đau, có sự cố đột xuất phải báo ngay cho trưởng bộ phận và Phòng HCNS bằng điện thoại và bổ sung đơn hoặc email xin phép sau đó.",
+          "page": null,
+          "score": 0.6563
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-1",
+          "excerpt": "SỔ TAY NHÂN VIÊN\n\n(Lưu ý: Tài liệu lưu hành nội bộ)\n\nWW",
+          "page": null,
+          "score": 0.6258
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.771,
+        "correctness": 1.0,
+        "answer_similarity": 0.541,
+        "overall": 0.924
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "3 nam",
+            "3.000.000",
+            "5 nam",
+            "5.000.000"
+          ],
+          "expected": [
+            "3 nam",
+            "3.000.000",
+            "5 nam",
+            "5.000.000"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV015",
+      "category": "discipline",
+      "query": "Các hình thức kỷ luật trong sổ tay gồm những gì?",
+      "expected_answer": "Sổ tay nêu các hình thức kỷ luật gồm khiển trách bằng miệng; cảnh cáo bằng văn bản và trừ trợ cấp trách nhiệm; cảnh cáo bằng văn bản kèm kéo dài thời gian nâng lương từ 06 tháng đến 01 năm hoặc cách chức tối đa 6 tháng; và buộc thôi việc với vi phạm nghiêm trọng.",
+      "actual_answer": "Dựa trên mục 3.4.4 của Sổ tay nhân viên, các hình thức kỷ luật tại công ty bao gồm:\n\n1. **Khiển trách bằng miệng:** Áp dụng với nhân viên phạm lỗi lần đầu ở cấp độ một, hai.\n2. **Cảnh cáo bằng văn bản:** \n   - Áp dụng đối với nhân viên phạm lỗi lần đầu ở cấp độ ba hoặc tái phạm ở cấp độ một, hai (trừ các trợ cấp trách nhiệm).\n   - Có thể kèm theo hình thức kéo dài thời gian nâng lương (từ 06 tháng đến 01 năm) hoặc cách chức (tối đa 06 tháng) đối với nhân viên tái phạm trong vòng 03 tháng kể từ ngày bị khiển trách bằng văn bản, hoặc vi phạm nội quy ở mức độ nặng.\n3. **Buộc thôi việc:** Áp dụng đối với những vi phạm nghiêm trọng, gây thiệt hại lớn ở cấp độ ba và những vi phạm các giá trị căn bản của công ty.",
+      "status_code": 200,
+      "ttft_ms": 2369.9520000009215,
+      "latency_ms": 2876.7794000013964,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.4.4 - Các hình thức kỷ luật",
+          "excerpt": "### Các hình thức kỷ luật\n\nKhiển trách bằng miệng được áp dụng đối với nhân viên phạm lỗi lần đầu ở cấp độ một, hai.\n\nCảnh cáo bằng văn bản, trừ các trợ cấp trách nhiệm đối với Nhân viên phạm lỗi lần đầu ở mức độ ba hoặc tái phạm ở mức độ một, hai.\n\nCảnh cáo bằng văn bản, kéo dài thời gian nâng lương từ 06 tháng đến 01 năm hoặc cách chức trong thời hạn tối đa 6 tháng được áp dụng đối với Nhân viên đã bị khiển trách bằng văn bản mà tái phạm trong thời gian 3 tháng kể từ ngày bị khiển trách văn bản hoặc vi phạm nội quy ở mức độ nặng.\n\nBuộc thôi việc đối với những vi phạm nghiêm trọng, gây thiệt hại lớn ở cấp độ ba và những vi phạm các giá trị căn bản của công ty.",
+          "page": null,
+          "score": 0.9589
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-49",
+          "excerpt": "CHƯƠNG III 4\n\nCÁC QUY TRÌNH, CHÍNH SÁCH, CHẾ ĐỘ 4\n\n- Chính sách tuyển dụng 4\n\n- Tuyển dụng 4\n\n- Thử việc 5\n\n- Đào tạo và phát triển 5\n\n- Tổng thu nhập 5\n\n- Bảo hiểm và phí công đoàn 6\n\n- Phúc lợi 6\n\n- Khám sức khỏe định kỳ 6\n\n- Nghỉ mát, du lịch 6\n\n- Thưởng, chi động viên các ngày lễ, tết, cá nhân 6\n\n- Đề bạt, khen thưởng 7\n\n- Chính sách đề bạt nhân viên 7\n\n- Chính sách khen thưởng, công nhận thành tích 8\n\n- Kỷ luật 8\n\n- Các hình thức kỷ luật 8\n\n- Quy định chi tiết 8\n\n- Cấp một 8\n\n- Cấp ba 9\n\n- Khiếu nại 10",
+          "page": null,
+          "score": 0.9144
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.4.7 - Cấp ba",
+          "excerpt": "### Cấp ba\n\n- Gạ gẫm khách hàng để thu lợi riêng hoặc gây phương hại đến uy tín của Công\n\nty.\n\n- Tiết lộ hoặc sử dụng trái phép thông tin của khách hàng hoặc của Công ty.\n\n- Bàn luận trái phép với người ngoài về những hoạt động của Công ty.\n\n- Không kết toán đầy đủ tài sản của Công ty.\n\n- Không trả lời những câu hỏi hợp lý của cấp trên về những công việc liên\n\nquan đến các hoạt động Công ty và phần trách nhiệm được giao.\n\n- Thiếu trung thực.\n\n- Giả mạo tài liệu của Công ty.\n\n- Không chấp hành lệnh cấp trên.\n\n- Có những hành vi làm tổn hại nghiêm trọng đến danh tiếng của Công ty.\n\n- Thiếu trung thực trong thực thi công việc hoặc có chủ ý chống lại Công ty.\n\n- Không có tinh thần cộng tác với Nhân viên khác, phát biểu sai, nói xấu, có\n\nác ý, xúc phạm nói tục hoặc thô lỗ về các đường lối chính sách của Công ty, ban lãnh đạo, hoặc đối với Nhân viên khác.\n\n- Sử dụng trái phép các tài sản của Công ty hoặc cố ý sử dụng sai các thiết bị khác của Công ty mà không có sự chấp thuận của Trưởng phòng hoặc BGĐ.\n\n- Thực hiện các hoạt động kinh doanh của cá nhân trong giờ làm việc.\n\n- Là thủ phạm chính hoặc đồng phạm làm cho Nhân viên khác không tuân theo\n\nnội qui, mệnh lệnh của cấp trên bằng cách dùng vũ lực, hăm dọa.\n\n- Vi phạm qui định phòng cháy, chữa cháy, an ninh, an toàn.\n\n- Khai man trong hồ sơ cá nhân.\n\nCác vi phạm bị buộc thôi việc ngay lập tức:\n\nĐối với những trường hợp sau đây, Công ty có quyền đơn phương chấm dứt hợp đồng lao động ngay lập tức mà không cần phải báo trước và có thể đề nghị khởi tố theo pháp luật hiện hành:\n\nNhận hối lộ.\n\nTrộm cắp, tham ô, tiết lộ bí mật công nghệ, tài sản trí tuệ, nội dung đào tạo\n\nhoặc giải pháp, công cụ tư vấn hoặc có hành vi khác gây thiệt hại nghiêm trọng về tài sản, lợi ích và uy tín của Công ty, đồng nghiệp, khách hàng.\n\n- Tự ý bỏ việc 05 ngày trong một tháng hoặc 20 ngày trong một năm mà không có lý do chính đáng.\n\n- Nhân viên bị xử lý kỷ luật chuyển sang công tác khác mà tái phạm trong thời gian chưa xóa kỷ luật.\n\n- Tàng trữ, vận chuyển, sử dụng vũ khí vật liệu cháy nổ, ma túy chất kích thích,\n\ntài liệu chống phá nhà nước trong Công ty.",
+          "page": null,
+          "score": 0.8237
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.4.6 - Cấp một",
+          "excerpt": "### Cấp một\n\n- Không đạt được những tiêu chuẩn về thành tích đã ấn định sau khi được đào tạo và hướng dẫn.\n\n- Tiếp khách và gọi điện thoại về việc riêng trong lúc làm việc (ngoại trừ trường hợp khẩn cấp).\n\n- Liên tục trễ nãi hoặc trì trệ trong công việc.\n\n- Không tắt các thiết bị điện, máy tính cá nhân khi hết giờ làm việc.\n\n- Ăn, hút thuốc, nhai kẹo cao su hoặc khạc nhổ bất kỳ nơi nào trong văn phòng\n\nCông ty.\n\n- Rời khỏi nơi làm việc mà không báo trước hoặc không xin phép.\n\n- Cấp hai\n\n- Cố tình ngủ trong giờ làm việc. Trường hợp mệt mỏi có thể xin phép cấp trên\n\nvề nhà.\n\n- Lăng mạ hoặc có hành vi khả ố.\n\n- Đọc báo hoặc những tài liệu khác không liên quan đến công việc trong giờ\n\nlàm việc. Trừ những trường hợp thời gian nghỉ trưa giữa lúc làm việc.\n\n- Không thực hiện đúng cam kết với khách hàng mà không có lý do chính đáng hoặc không thông báo trước, không thoả thuận lại với khách hàng.\n\n- Rời bỏ vị trí trong giờ làm việc mà không có sự chấp thuận trước của người\n\nphụ trách.\n\n- Đưa người lạ hoặc người không có trách nhiệm vào khuôn viên của Công ty.\n\n- Lưu hành các văn bản hoặc ấn phẩm trái phép.\n\n- Sử dụng điện thoại và các tài sản Công ty cho việc riêng.\n\n- Lướt web facebook trong giờ làm việc.\n\n- Không mặc đồng phục theo quy định công ty.",
+          "page": null,
+          "score": 0.8197
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.4.3 - Kỷ luật",
+          "excerpt": "### Kỷ luật\n\nCông ty thực hiện chức năng này với nguyên tắc xây dựng, khách quan, kịp thời và ổn định. Mục đích là nhằm điều chỉnh và hoàn thiện các hành vi của nhân viên hơn là trừng phạt.",
+          "page": null,
+          "score": 0.7948
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.757,
+        "correctness": 1.0,
+        "answer_similarity": 0.515,
+        "overall": 0.919
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "khien trach bang mieng",
+            "canh cao bang van ban",
+            "06 thang den 01 nam",
+            "buoc thoi viec"
+          ],
+          "expected": [
+            "khien trach bang mieng",
+            "canh cao bang van ban",
+            "06 thang den 01 nam",
+            "buoc thoi viec"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV016",
+      "category": "working_time",
+      "query": "Thời gian làm việc và nghỉ trưa tại EIV như thế nào?",
+      "expected_answer": "Ngày làm việc là từ thứ 2 đến thứ 6. Giờ làm việc từ 08:30 đến 17:00, nghỉ trưa từ 12h đến 13h30.",
+      "actual_answer": "Chào bạn, theo mục 4.1 của Sổ tay nhân viên, thời gian làm việc và nghỉ trưa tại EIV được quy định như sau:\n\n*   **Ngày làm việc:** Từ thứ 2 đến thứ 6.\n*   **Giờ làm việc:** Từ 08:30 đến 17:00.\n*   **Nghỉ trưa:** Từ 12:00 đến 13:30.",
+      "status_code": 200,
+      "ttft_ms": 2031.4579999976559,
+      "latency_ms": 2253.2064999977592,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.1 - Thời gian làm việc",
+          "excerpt": "## Thời gian làm việc\n\nNgày làm việc: Từ thứ 2 đến thứ 6.\n\nGiờ làm việc: 08:30 đến 17:00.\n\nNghỉ trưa: Từ 12h đến 13h30.\n\nKhi cần giải quyết công việc có tính chất cấp bách, công ty có thể thỏa thuận nhân viên làm thêm giờ và được tính lương ngoài giờ theo quy định của luật lao động.",
+          "page": null,
+          "score": 0.9171
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.3 - Ngày nghỉ lễ:",
+          "excerpt": "## Ngày nghỉ lễ:\n\nHàng năm, tất cả thành viên EIV đều được nghỉ 10 ngày lễ được hưởng nguyên lương như sau:\n\nTết Dương lịch: 01 ngày (ngày 01/01).\n\nTết Âm lịch: 05 ngày (01 ngày cuối năm cũ và 04 ngày đầu năm mới âm lịch).\n\nNgày Giỗ tổ Hùng Vương: 01 ngày (ngày 10/03 âm lịch);\n\nNgày Giải phóng miền Nam: 01 ngày (ngày 30/04);\n\nNgày Quốc tế lao động: 01 ngày (ngày 01/05);\n\nNgày Quốc khánh: 01 ngày (ngày 02/09).",
+          "page": null,
+          "score": 0.8532
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "LỜI MỞ ĐẦU",
+          "excerpt": "# LỜI MỞ ĐẦU\n\n«»\n\nThay mặt Ban Giám đốc Công ty, tôi rất vui mừng chào đón bạn trở thành thành viên của Công ty Cổ Phần Quốc Tế EIV. Với khả năng và trình độ chuyên môn, bạn đã được tuyển chọn vào làm việc tại Công ty. Tôi tin tưởng rằng chúng ta sẽ cùng nhau xây dựng Công ty Cổ phần Quốc Tế EIV thành công và phát triển bền vững, lâu dài.\n\nChúng ta cùng chia sẻ những cơ hội, thách thức cạnh tranh, sự thành đạt và lợi ích trong tương lai thông qua:\n\n- Các sản phẩm, dịch vụ giáo dục sáng tạo và chất lượng hàng đầu trong bất cứ lĩnh vực kinh doanh nào của Công ty.\n\n- Đội ngũ cán bộ, công nhân viên liêm chính, tận tụy, trung tín và sáng tạo.\n\n- Việc chăm sóc chu đáo các nhu cầu của khách hàng hiện tại và không ngừng vươn tới các thị trường mới.\n\n- Hiệu quả tài chính trong mọi hoạt động của Công ty.\n\nTôi mong đợi bạn sẽ làm việc hết sức mình, nỗ lực cống hiến năng lực của mình để góp phần đạt được hoài bão chung này.\n\nChúng tôi luôn kỳ vọng và tin tưởng mỗi nhân viên sẽ phát huy tối đa tinh thần sáng tạo, khả năng tự hoàn thiện để tạo sức mạnh và động lực thúc đẩy mọi thành viên của Công ty làm việc. Vì thế, chúng tôi ủng hộ tinh thần làm việc hợp tác, tin cậy và cởi mở trong Công ty.\n\nĐây không chỉ là ngày bắt đầu công việc của bạn và mà còn là bước khởi đầu phát triển nghề nghiệp của bạn.\n\nSổ tay nhân viên này nhằm giúp bạn làm quen với những thông tin cần thiết, văn hóa Công ty, các nội quy, quy định và đồng thời cả các quyền lợi và trách nhiệm của bạn trong Công ty. Tôi mong bạn sẽ sử dụng Sổ tay như một nguồn thông tin khi cần thiết.\n\nChúc bạn luôn thành công trong công việc và có một tương lai đầy hứa hẹn tại Công ty chúng ta.\n\nTP.Hồ Chí Minh, ngày 10 tháng 8 năm 2020\n\nĐẠI DIỆN BAN GIÁM ĐỐC",
+          "page": null,
+          "score": 0.7716
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "5.4 - Thực hiện trật tự, vệ sinh, quản lý và sử dụng tài sản công ty",
+          "excerpt": "## Thực hiện trật tự, vệ sinh, quản lý và sử dụng tài sản công ty\n\nKhông nói lớn tiếng, gây ồn ào, mất trật tự làm ảnh hưởng đến người xung quanh. Đi lại, di chuyển nhẹ nhàng, bảo đảm sự yên tĩnh cần thiết nơi làm việc.\n\nSử dụng tai nghe khi muốn nghe các chương trình hoặc nhạc với mục đích cá nhân trong giờ nghỉ trưa.\n\nLuôn trả lại vị trí cũ và sắp xếp các vật dụng, vật liệu, tài liệu, báo ngay ngắn, gọn gàng, đẹp mắt sau khi sử dụng.\n\nVệ sinh bàn ghế, vật dụng, ngăn chứa hồ sơ, tủ, nơi làm việc cá nhân và giữ gìn vệ sinh chung trong Công ty.\n\nMọi nhân viên phải sử dụng tiết kiệm và hiệu quả các trang thiết bị, máy móc và các nguồn năng lượng (điện, nước ...), cước phí viễn thông, chi phí văn phòng phẩm, chi phí photocopy, chi phí in ấn, chi phí quảng cáo ...\n\nTắt điện/ máy lạnh phòng họp khi không sử dụng. Tắt cầu giao điện tại tất cả phòng ban/bộ phận sau giờ làm việc.\n\nTắt máy tính trong giờ nghỉ trưa hoặc không làm việc với máy tính từ 1 giờ trở lên.\n\nNếu quan sát thấy lãng phí điện, hãy chủ động tắt các thiết bị điện.\n\nKhông được để điều hoà nhiệt độ quá cao hoặc quá thấp. Khi bật điều hoà phải đóng cửa phòng, kèm theo việc bật quạt. Sáng kiến này có thể tiết kiệm được từ 10 - 15% tiền điện cho điều hòa.\n\nTiết kiệm băng thông Internet: Máy chủ của Công ty phải cài đặt phần mềm hạn chế việc truy cập Internet của những người có công việc không liên quan và bắt buộc phải vào Internet. Hành động này nhằm tăng băng thông cho những người thường xuyên phải vào Internet và tiết kiệm cho Công ty không phải nâng cấp thêm băng thông.\n\nNhững khoản chi nào chưa cần thiết, chưa cấp bách thì tạm thời dừng chi tiêu, những khoản chi nào chưa có hiệu quả thì phải làm cho có hiệu quả.\n\nKhông được phép di chuyển bất cứ vật dụng gì trong khuôn viên và thuộc quyền sở hữu của công ty khi chưa được sự đồng ý của cấp quản lý. Trong trường hợp do yêu cầu công việc phải mang các tài sản của công ty ra ngoài phải có sự đồng ý của BGĐ.\n\nĐối với các tài sản, trang thiết bị của công ty giao cho nhân viên quản lý, sử dụng\n\nvà có biên nhận bàn giao thì nhân viên có thể mang ra ngoài và chịu trách nhiệm bảo quản, trường hợp mất mát hư hỏng sẽ bồi thường thiệt hại.\n\nLuôn luôn ý thức tiết kiệm chi phí trong việc sử dụng văn phòng phẩm, vật dụng, dụng cụ và các phương tiện làm việc khác mà công ty trang bị.\n\nKhông hút thuốc lá trong công ty và khi gặp khách hàng (trừ trường hợp do khách hàng mời).",
+          "page": null,
+          "score": 0.7702
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-50",
+          "excerpt": "CHƯƠNG IV 10\n\nTHỜI GIAN LÀM VIỆC VÀ NGHỈ NGƠI 10\n\n- Thời gian làm việc 10\n\n- Ngày phép, nghỉ phép và nghỉ không hưởng lương 11\n\n- Ngày nghỉ lễ: 11\n\n- Nghỉ theo chế độ 11",
+          "page": null,
+          "score": 0.7546
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.661,
+        "correctness": 0.95,
+        "answer_similarity": 0.571,
+        "overall": 0.87
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "thu 2 den thu 6",
+            "08:30",
+            "17:00"
+          ],
+          "expected": [
+            "thu 2 den thu 6",
+            "08:30",
+            "17:00",
+            "12h den 13h30"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV017",
+      "category": "leave",
+      "query": "Nhân viên làm đủ 12 tháng được bao nhiêu ngày phép có hưởng lương?",
+      "expected_answer": "Nhân viên làm việc đủ 12 tháng được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ 12 tháng thì tính theo thực tế số tháng làm việc, mỗi tháng 1 ngày phép.",
+      "actual_answer": "Chào bạn, theo tài liệu **So_tay_nhan_vien - mục 4.2**, nhân viên làm việc đủ 12 tháng sẽ được hưởng 12 ngày nghỉ phép có hưởng lương. \n\nNgoài ra, cứ mỗi 5 năm làm việc, bạn sẽ được cộng thêm 1 ngày phép.",
+      "status_code": 200,
+      "ttft_ms": 12254.082600000402,
+      "latency_ms": 12409.25690000222,
+      "retry_after_seconds": 7,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.2 - Ngày phép, nghỉ phép và nghỉ không hưởng lương",
+          "excerpt": "## Ngày phép, nghỉ phép và nghỉ không hưởng lương\n\nNgày phép\n\nNhân viên làm việc đủ 12 tháng sẽ được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ sẽ tính theo thực tế số tháng làm việc là 1 ngày phép/tháng. Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép sẽ không được tính cộng dồn cho phép năm sau và sẽ không được quy đổi thành tiền trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.\n\nCứ 5 năm làm việc sẽ được cộng thêm 1 ngày phép.\n\nNghỉ phép và nghỉ không hưởng lương\n\nTrường hợp nghỉ dưới 03 ngày: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.\n\nTrường hợp nghỉ phép từ 03 ngày trở lên: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và Giám đốc và báo cho Phòng HCNS trước khi nghỉ 3 ngày.\n\nĐối với các trường hợp nghỉ từ 30 ngày trở lên thì phải nộp đơn xin nghỉ trước 30 ngày và phải có sự đồng ý của Giám đốc.\n\nCác trường hợp ốm đau, có sự cố đột xuất phải báo ngay cho trưởng bộ phận và Phòng HCNS bằng điện thoại và bổ sung đơn hoặc email xin phép sau đó.",
+          "page": null,
+          "score": 0.9744
+        },
+        {
+          "document_id": "2fb7f3b3-0d56-42a1-97ba-e9d6e51d4849",
+          "document_title": "C010 Chinh sach nghi phep",
+          "section": "chunk-1",
+          "excerpt": "Nhan vien chinh thuc co 12 ngay nghi phep nam moi nam. Quy dinh nghi phep nam yeu cau gui yeu cau truoc it nhat 3 ngay lam viec. Ngay phep chua su dung co the chuyen toi da 5 ngay sang nam tiep theo. Quan ly truc tiep phe duyet lich nghi phep theo ke hoach van hanh cua phong ban.",
+          "page": null,
+          "score": 0.8537
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.3 - Ngày nghỉ lễ:",
+          "excerpt": "## Ngày nghỉ lễ:\n\nHàng năm, tất cả thành viên EIV đều được nghỉ 10 ngày lễ được hưởng nguyên lương như sau:\n\nTết Dương lịch: 01 ngày (ngày 01/01).\n\nTết Âm lịch: 05 ngày (01 ngày cuối năm cũ và 04 ngày đầu năm mới âm lịch).\n\nNgày Giỗ tổ Hùng Vương: 01 ngày (ngày 10/03 âm lịch);\n\nNgày Giải phóng miền Nam: 01 ngày (ngày 30/04);\n\nNgày Quốc tế lao động: 01 ngày (ngày 01/05);\n\nNgày Quốc khánh: 01 ngày (ngày 02/09).",
+          "page": null,
+          "score": 0.7702
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-50",
+          "excerpt": "CHƯƠNG IV 10\n\nTHỜI GIAN LÀM VIỆC VÀ NGHỈ NGƠI 10\n\n- Thời gian làm việc 10\n\n- Ngày phép, nghỉ phép và nghỉ không hưởng lương 11\n\n- Ngày nghỉ lễ: 11\n\n- Nghỉ theo chế độ 11",
+          "page": null,
+          "score": 0.7604
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.4 - Nghỉ theo chế độ",
+          "excerpt": "## Nghỉ theo chế độ\n\nNghỉ ốm: Thực hiện theo quy định của luật bảo hiểm xã hội.\n\nNghỉ kết hôn: Bản thân người lao động kết hôn được nghỉ 3 ngày, con cái kết hôn được nghỉ 1 ngày.\n\nNghỉ tang: Nhân viên được nghỉ 3 ngày khi bố mẹ (cả bên chồng hoặc vợ) mất, vợ hoặc chồng mất, con mất. Trường hợp anh chị em ruột mất, ông bà (cả bên chồng hoặc vợ) mất được nghỉ 1 ngày.\n\nNghỉ sinh con: theo quy định của luật lao động và bảo hiểm xã hội. Nhân viên nữ nghỉ sinh con phải báo cho trưởng bộ phận và Phòng HCNS trước 1 tháng.",
+          "page": null,
+          "score": 0.7087
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.631,
+        "correctness": 0.933,
+        "answer_similarity": 0.595,
+        "overall": 0.855
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": false,
+          "hits": [
+            "du 12 thang",
+            "12 ngay nghi phep"
+          ],
+          "expected": [
+            "du 12 thang",
+            "12 ngay nghi phep",
+            "1 ngay phep/thang"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "C010 Chinh sach nghi phep",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "STNV018",
+      "category": "leave",
+      "query": "Ngày phép chưa sử dụng hết có được cộng dồn sang năm sau hoặc quy đổi thành tiền không?",
+      "expected_answer": "Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép thì không được cộng dồn sang năm sau và không được quy đổi thành tiền, trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.",
+      "actual_answer": "Chào bạn, về câu hỏi của bạn, thông tin trong các tài liệu hiện có đang có sự khác biệt như sau:\n\n*   Theo **[1] Sổ tay nhân viên (mục 4.2)**: Ngày phép chưa sử dụng hết sẽ không được cộng dồn sang năm sau và không được quy đổi thành tiền, trừ trường hợp công việc không thể nghỉ phép do yêu cầu của Ban Giám đốc.\n*   Theo **[2] C010 Chính sách nghỉ phép**: Ngày phép chưa sử dụng có thể chuyển tối đa 5 ngày sang năm tiếp theo.\n\nVì có sự mâu thuẫn giữa các tài liệu về việc cộng dồn ngày phép, tôi chưa thể đưa ra kết luận chính xác cho trường hợp của bạn. Bạn vui lòng liên hệ trực tiếp với bộ phận HR để được làm rõ và xác nhận quy định áp dụng hiện hành nhé.",
+      "status_code": 200,
+      "ttft_ms": 2419.375500001479,
+      "latency_ms": 3011.713100000634,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.2 - Ngày phép, nghỉ phép và nghỉ không hưởng lương",
+          "excerpt": "## Ngày phép, nghỉ phép và nghỉ không hưởng lương\n\nNgày phép\n\nNhân viên làm việc đủ 12 tháng sẽ được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ sẽ tính theo thực tế số tháng làm việc là 1 ngày phép/tháng. Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép sẽ không được tính cộng dồn cho phép năm sau và sẽ không được quy đổi thành tiền trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.\n\nCứ 5 năm làm việc sẽ được cộng thêm 1 ngày phép.\n\nNghỉ phép và nghỉ không hưởng lương\n\nTrường hợp nghỉ dưới 03 ngày: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.\n\nTrường hợp nghỉ phép từ 03 ngày trở lên: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và Giám đốc và báo cho Phòng HCNS trước khi nghỉ 3 ngày.\n\nĐối với các trường hợp nghỉ từ 30 ngày trở lên thì phải nộp đơn xin nghỉ trước 30 ngày và phải có sự đồng ý của Giám đốc.\n\nCác trường hợp ốm đau, có sự cố đột xuất phải báo ngay cho trưởng bộ phận và Phòng HCNS bằng điện thoại và bổ sung đơn hoặc email xin phép sau đó.",
+          "page": null,
+          "score": 0.9636
+        },
+        {
+          "document_id": "2fb7f3b3-0d56-42a1-97ba-e9d6e51d4849",
+          "document_title": "C010 Chinh sach nghi phep",
+          "section": "chunk-1",
+          "excerpt": "Nhan vien chinh thuc co 12 ngay nghi phep nam moi nam. Quy dinh nghi phep nam yeu cau gui yeu cau truoc it nhat 3 ngay lam viec. Ngay phep chua su dung co the chuyen toi da 5 ngay sang nam tiep theo. Quan ly truc tiep phe duyet lich nghi phep theo ke hoach van hanh cua phong ban.",
+          "page": null,
+          "score": 0.9224
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-50",
+          "excerpt": "CHƯƠNG IV 10\n\nTHỜI GIAN LÀM VIỆC VÀ NGHỈ NGƠI 10\n\n- Thời gian làm việc 10\n\n- Ngày phép, nghỉ phép và nghỉ không hưởng lương 11\n\n- Ngày nghỉ lễ: 11\n\n- Nghỉ theo chế độ 11",
+          "page": null,
+          "score": 0.7214
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "3.3.2 - Nghỉ mát, du lịch",
+          "excerpt": "### Nghỉ mát, du lịch\n\nHàng năm, tùy tình hình tài chính, công ty sẽ tổ chức 1 kỳ du lịch nghỉ mát cho toàn thể thành viên EIV. Thời gian và chi phí dựa trên đề xuất của Phòng HCNS.",
+          "page": null,
+          "score": 0.6221
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.4 - Nghỉ theo chế độ",
+          "excerpt": "## Nghỉ theo chế độ\n\nNghỉ ốm: Thực hiện theo quy định của luật bảo hiểm xã hội.\n\nNghỉ kết hôn: Bản thân người lao động kết hôn được nghỉ 3 ngày, con cái kết hôn được nghỉ 1 ngày.\n\nNghỉ tang: Nhân viên được nghỉ 3 ngày khi bố mẹ (cả bên chồng hoặc vợ) mất, vợ hoặc chồng mất, con mất. Trường hợp anh chị em ruột mất, ông bà (cả bên chồng hoặc vợ) mất được nghỉ 1 ngày.\n\nNghỉ sinh con: theo quy định của luật lao động và bảo hiểm xã hội. Nhân viên nữ nghỉ sinh con phải báo cho trưởng bộ phận và Phòng HCNS trước 1 tháng.",
+          "page": null,
+          "score": 0.6203
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.532,
+        "correctness": 0.933,
+        "answer_similarity": 0.398,
+        "overall": 0.822
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": false,
+          "hits": [
+            "khong duoc cong don",
+            "khong duoc quy doi thanh tien"
+          ],
+          "expected": [
+            "khong duoc cong don",
+            "khong duoc quy doi thanh tien",
+            "yeu cau cua BGD"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "C010 Chinh sach nghi phep",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": false
+    },
+    {
+      "id": "STNV019",
+      "category": "leave",
+      "query": "Nếu nghỉ phép dưới 3 ngày thì cần báo trước thế nào?",
+      "expected_answer": "Trường hợp nghỉ dưới 03 ngày, nhân viên cần được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.",
+      "actual_answer": "Chào bạn, theo mục 4.2 trong Sổ tay nhân viên, khi bạn nghỉ phép dưới 03 ngày, bạn cần thực hiện các bước sau:\n\n1. Được sự đồng ý của trưởng bộ phận.\n2. Thông báo cho Phòng HCNS trước 01 ngày.\n\nLưu ý: Nếu là trường hợp ốm đau hoặc sự cố đột xuất, bạn cần báo ngay cho trưởng bộ phận và Phòng HCNS qua điện thoại, sau đó bổ sung đơn hoặc email xin phép sau.",
+      "status_code": 200,
+      "ttft_ms": 2316.185800002131,
+      "latency_ms": 2633.148800003255,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.2 - Ngày phép, nghỉ phép và nghỉ không hưởng lương",
+          "excerpt": "## Ngày phép, nghỉ phép và nghỉ không hưởng lương\n\nNgày phép\n\nNhân viên làm việc đủ 12 tháng sẽ được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ sẽ tính theo thực tế số tháng làm việc là 1 ngày phép/tháng. Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép sẽ không được tính cộng dồn cho phép năm sau và sẽ không được quy đổi thành tiền trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.\n\nCứ 5 năm làm việc sẽ được cộng thêm 1 ngày phép.\n\nNghỉ phép và nghỉ không hưởng lương\n\nTrường hợp nghỉ dưới 03 ngày: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.\n\nTrường hợp nghỉ phép từ 03 ngày trở lên: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và Giám đốc và báo cho Phòng HCNS trước khi nghỉ 3 ngày.\n\nĐối với các trường hợp nghỉ từ 30 ngày trở lên thì phải nộp đơn xin nghỉ trước 30 ngày và phải có sự đồng ý của Giám đốc.\n\nCác trường hợp ốm đau, có sự cố đột xuất phải báo ngay cho trưởng bộ phận và Phòng HCNS bằng điện thoại và bổ sung đơn hoặc email xin phép sau đó.",
+          "page": null,
+          "score": 0.96
+        },
+        {
+          "document_id": "2fb7f3b3-0d56-42a1-97ba-e9d6e51d4849",
+          "document_title": "C010 Chinh sach nghi phep",
+          "section": "chunk-1",
+          "excerpt": "Nhan vien chinh thuc co 12 ngay nghi phep nam moi nam. Quy dinh nghi phep nam yeu cau gui yeu cau truoc it nhat 3 ngay lam viec. Ngay phep chua su dung co the chuyen toi da 5 ngay sang nam tiep theo. Quan ly truc tiep phe duyet lich nghi phep theo ke hoach van hanh cua phong ban.",
+          "page": null,
+          "score": 0.9305
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.4 - Nghỉ theo chế độ",
+          "excerpt": "## Nghỉ theo chế độ\n\nNghỉ ốm: Thực hiện theo quy định của luật bảo hiểm xã hội.\n\nNghỉ kết hôn: Bản thân người lao động kết hôn được nghỉ 3 ngày, con cái kết hôn được nghỉ 1 ngày.\n\nNghỉ tang: Nhân viên được nghỉ 3 ngày khi bố mẹ (cả bên chồng hoặc vợ) mất, vợ hoặc chồng mất, con mất. Trường hợp anh chị em ruột mất, ông bà (cả bên chồng hoặc vợ) mất được nghỉ 1 ngày.\n\nNghỉ sinh con: theo quy định của luật lao động và bảo hiểm xã hội. Nhân viên nữ nghỉ sinh con phải báo cho trưởng bộ phận và Phòng HCNS trước 1 tháng.",
+          "page": null,
+          "score": 0.8648
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "5.1 - Ra vào công ty",
+          "excerpt": "## Ra vào công ty\n\nTrong giờ làm việc, tất cả nhân viên khi đi công tác phải được sự đồng ý của cấp trên trực tiếp và phải được thông báo đến bộ phận lễ tân hay người có liên quan để được hỗ trợ công việc trong thời gian vắng mặt.\n\nNhân viên khi ra khỏi công ty phải ghi lại thời gian đi trên bảng thông báo/lịch công tác để các bộ phận chủ động trong công việc. Đồng thời cuối mỗi tháng, nhân viên phải nộp lại Bảng ngoài giờ (nếu có) cho Trưởng Bộ Phận xác nhận thời gian không có mặt ở công ty.\n\nTrường hợp làm việc vào ngày nghỉ phải được sự đồng ý của BGĐ để vào công ty.",
+          "page": null,
+          "score": 0.7503
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-50",
+          "excerpt": "CHƯƠNG IV 10\n\nTHỜI GIAN LÀM VIỆC VÀ NGHỈ NGƠI 10\n\n- Thời gian làm việc 10\n\n- Ngày phép, nghỉ phép và nghỉ không hưởng lương 11\n\n- Ngày nghỉ lễ: 11\n\n- Nghỉ theo chế độ 11",
+          "page": null,
+          "score": 0.7384
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.612,
+        "correctness": 0.95,
+        "answer_similarity": 0.474,
+        "overall": 0.854
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "duoi 03 ngay",
+            "truong bo phan",
+            "Phong HCNS"
+          ],
+          "expected": [
+            "duoi 03 ngay",
+            "truong bo phan",
+            "Phong HCNS",
+            "truoc 1 ngay"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "C010 Chinh sach nghi phep",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    },
+    {
+      "id": "STNV020",
+      "category": "leave",
+      "query": "Các ngày nghỉ lễ hằng năm được hưởng nguyên lương gồm bao nhiêu ngày?",
+      "expected_answer": "Hằng năm, tất cả thành viên EIV được nghỉ 10 ngày lễ hưởng nguyên lương, gồm Tết Dương lịch 1 ngày, Tết Âm lịch 5 ngày, Giỗ tổ Hùng Vương 1 ngày, 30/04 1 ngày, 01/05 1 ngày và Quốc khánh 02/09 1 ngày.",
+      "actual_answer": "Chào bạn, theo mục 4.3 trong tài liệu **Sổ tay nhân viên**, hàng năm tất cả thành viên EIV được nghỉ tổng cộng 10 ngày lễ hưởng nguyên lương, bao gồm:\n\n*   **Tết Dương lịch:** 01 ngày (01/01).\n*   **Tết Âm lịch:** 05 ngày (01 ngày cuối năm cũ và 04 ngày đầu năm mới âm lịch).\n*   **Ngày Giỗ tổ Hùng Vương:** 01 ngày (10/03 âm lịch).\n*   **Ngày Giải phóng miền Nam:** 01 ngày (30/04).\n*   **Ngày Quốc tế lao động:** 01 ngày (01/05).\n*   **Ngày Quốc khánh:** 01 ngày (02/09).",
+      "status_code": 200,
+      "ttft_ms": 2656.3196999995853,
+      "latency_ms": 3085.8756000016,
+      "retry_after_seconds": 0,
+      "citations": [
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.3 - Ngày nghỉ lễ:",
+          "excerpt": "## Ngày nghỉ lễ:\n\nHàng năm, tất cả thành viên EIV đều được nghỉ 10 ngày lễ được hưởng nguyên lương như sau:\n\nTết Dương lịch: 01 ngày (ngày 01/01).\n\nTết Âm lịch: 05 ngày (01 ngày cuối năm cũ và 04 ngày đầu năm mới âm lịch).\n\nNgày Giỗ tổ Hùng Vương: 01 ngày (ngày 10/03 âm lịch);\n\nNgày Giải phóng miền Nam: 01 ngày (ngày 30/04);\n\nNgày Quốc tế lao động: 01 ngày (ngày 01/05);\n\nNgày Quốc khánh: 01 ngày (ngày 02/09).",
+          "page": null,
+          "score": 0.9607
+        },
+        {
+          "document_id": "2fb7f3b3-0d56-42a1-97ba-e9d6e51d4849",
+          "document_title": "C010 Chinh sach nghi phep",
+          "section": "chunk-1",
+          "excerpt": "Nhan vien chinh thuc co 12 ngay nghi phep nam moi nam. Quy dinh nghi phep nam yeu cau gui yeu cau truoc it nhat 3 ngay lam viec. Ngay phep chua su dung co the chuyen toi da 5 ngay sang nam tiep theo. Quan ly truc tiep phe duyet lich nghi phep theo ke hoach van hanh cua phong ban.",
+          "page": null,
+          "score": 0.8347
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.2 - Ngày phép, nghỉ phép và nghỉ không hưởng lương",
+          "excerpt": "## Ngày phép, nghỉ phép và nghỉ không hưởng lương\n\nNgày phép\n\nNhân viên làm việc đủ 12 tháng sẽ được 12 ngày nghỉ phép có hưởng lương. Nếu chưa đủ sẽ tính theo thực tế số tháng làm việc là 1 ngày phép/tháng. Nếu hết năm mà nhân viên chưa sử dụng hết ngày phép sẽ không được tính cộng dồn cho phép năm sau và sẽ không được quy đổi thành tiền trừ trường hợp công việc không thể nghỉ phép do yêu cầu của BGĐ.\n\nCứ 5 năm làm việc sẽ được cộng thêm 1 ngày phép.\n\nNghỉ phép và nghỉ không hưởng lương\n\nTrường hợp nghỉ dưới 03 ngày: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và báo cho Phòng HCNS trước 1 ngày.\n\nTrường hợp nghỉ phép từ 03 ngày trở lên: Nhân viên khi cần nghỉ phép phải được sự đồng ý của trưởng bộ phận và Giám đốc và báo cho Phòng HCNS trước khi nghỉ 3 ngày.\n\nĐối với các trường hợp nghỉ từ 30 ngày trở lên thì phải nộp đơn xin nghỉ trước 30 ngày và phải có sự đồng ý của Giám đốc.\n\nCác trường hợp ốm đau, có sự cố đột xuất phải báo ngay cho trưởng bộ phận và Phòng HCNS bằng điện thoại và bổ sung đơn hoặc email xin phép sau đó.",
+          "page": null,
+          "score": 0.8168
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "chunk-50",
+          "excerpt": "CHƯƠNG IV 10\n\nTHỜI GIAN LÀM VIỆC VÀ NGHỈ NGƠI 10\n\n- Thời gian làm việc 10\n\n- Ngày phép, nghỉ phép và nghỉ không hưởng lương 11\n\n- Ngày nghỉ lễ: 11\n\n- Nghỉ theo chế độ 11",
+          "page": null,
+          "score": 0.796
+        },
+        {
+          "document_id": "doc-module-rag-so-tay-nhan-vien",
+          "document_title": "So_tay_nhan_vien",
+          "section": "4.4 - Nghỉ theo chế độ",
+          "excerpt": "## Nghỉ theo chế độ\n\nNghỉ ốm: Thực hiện theo quy định của luật bảo hiểm xã hội.\n\nNghỉ kết hôn: Bản thân người lao động kết hôn được nghỉ 3 ngày, con cái kết hôn được nghỉ 1 ngày.\n\nNghỉ tang: Nhân viên được nghỉ 3 ngày khi bố mẹ (cả bên chồng hoặc vợ) mất, vợ hoặc chồng mất, con mất. Trường hợp anh chị em ruột mất, ông bà (cả bên chồng hoặc vợ) mất được nghỉ 1 ngày.\n\nNghỉ sinh con: theo quy định của luật lao động và bảo hiểm xã hội. Nhân viên nữ nghỉ sinh con phải báo cho trưởng bộ phận và Phòng HCNS trước 1 tháng.",
+          "page": null,
+          "score": 0.7119
+        }
+      ],
+      "actions": [
+        {
+          "type": "none",
+          "label": "Không cần thao tác",
+          "data": null
+        }
+      ],
+      "refusal_reason": null,
+      "scores": {
+        "groundedness": 1.0,
+        "relevance": 0.811,
+        "correctness": 1.0,
+        "answer_similarity": 0.621,
+        "overall": 0.937
+      },
+      "checks": {
+        "required_phrases": {
+          "passed": true,
+          "hits": [
+            "10 ngay le",
+            "Tet Duong lich",
+            "Tet Am lich",
+            "Quoc khanh"
+          ],
+          "expected": [
+            "10 ngay le",
+            "Tet Duong lich",
+            "Tet Am lich",
+            "Quoc khanh"
+          ]
+        },
+        "forbidden_phrases": {
+          "passed": true,
+          "hits": []
+        },
+        "citations": {
+          "passed": true,
+          "expected_source_titles": [
+            "So_tay_nhan_vien"
+          ],
+          "actual_source_titles": [
+            "So_tay_nhan_vien",
+            "C010 Chinh sach nghi phep",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien",
+            "So_tay_nhan_vien"
+          ]
+        },
+        "action_type": {
+          "passed": true,
+          "expected": "none",
+          "actual": "none"
+        },
+        "action_data": {
+          "passed": true,
+          "expected": {}
+        },
+        "refusal_reason": {
+          "passed": true,
+          "expected": null,
+          "actual": null
+        }
+      },
+      "passed": true
+    }
+  ]
+}

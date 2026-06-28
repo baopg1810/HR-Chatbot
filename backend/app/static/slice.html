@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HR Helpdesk AI Slice</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 32px;
+        max-width: 760px;
+        color: #111827;
+      }
+      label {
+        display: block;
+        margin-top: 16px;
+        font-weight: 600;
+      }
+      input,
+      textarea,
+      button {
+        box-sizing: border-box;
+        font: inherit;
+        margin-top: 6px;
+        padding: 10px;
+        width: 100%;
+      }
+      button {
+        cursor: pointer;
+        font-weight: 700;
+      }
+      pre {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        overflow: auto;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>HR Helpdesk AI</h1>
+    <label>Email
+      <input id="email" value="employee@example.com" />
+    </label>
+    <label>Mật khẩu
+      <input id="password" type="password" value="employee123" />
+    </label>
+    <button id="login">Đăng nhập</button>
+
+    <label>Tin nhắn
+      <textarea id="message" rows="4">Tôi cần hỏi về chính sách nghỉ phép.</textarea>
+    </label>
+    <button id="send">Gửi chat</button>
+
+    <h2>Kết quả</h2>
+    <pre id="output">Sẵn sàng.</pre>
+
+    <script>
+      let token = "";
+      const output = document.querySelector("#output");
+
+      async function postJson(url, body, headers = {}) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {"Content-Type": "application/json", ...headers},
+          body: JSON.stringify(body),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(JSON.stringify(data));
+        return data;
+      }
+
+      function parseSseEvent(raw) {
+        const lines = raw.split("\n");
+        const eventLine = lines.find((line) => line.startsWith("event:"));
+        const dataLines = lines.filter((line) => line.startsWith("data:")).map((line) => line.slice(5).trimStart());
+        if (!eventLine || dataLines.length === 0) return null;
+        return {
+          event: eventLine.slice(6).trim(),
+          data: JSON.parse(dataLines.join("\n")),
+        };
+      }
+
+      document.querySelector("#login").addEventListener("click", async () => {
+        try {
+          const data = await postJson("/api/v1/auth/login", {
+            email: document.querySelector("#email").value,
+            password: document.querySelector("#password").value,
+          });
+          token = data.access_token;
+          output.textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+          output.textContent = error.message;
+        }
+      });
+
+      document.querySelector("#send").addEventListener("click", async () => {
+        try {
+          output.textContent = "";
+          const response = await fetch("/api/v1/chat/stream", {
+            method: "POST",
+            headers: {"Content-Type": "application/json", Authorization: `Bearer ${token}`},
+            body: JSON.stringify({message: document.querySelector("#message").value, session_id: null}),
+          });
+          if (!response.ok || !response.body) throw new Error(await response.text());
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let finalData = null;
+          while (true) {
+            const {value, done} = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, {stream: true});
+            const parts = buffer.split("\n\n");
+            buffer = parts.pop() || "";
+            for (const part of parts) {
+              const event = parseSseEvent(part);
+              if (!event) continue;
+              if (event.event === "token") output.textContent += event.data.text || "";
+              if (event.event === "done") finalData = event.data;
+              if (event.event === "error") throw new Error(event.data.detail || "Streaming chat thất bại");
+            }
+          }
+          if (finalData) output.textContent = JSON.stringify(finalData, null, 2);
+        } catch (error) {
+          output.textContent = error.message;
+        }
+      });
+    </script>
+  </body>
+</html>

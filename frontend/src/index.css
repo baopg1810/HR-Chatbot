@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply text-brand-text bg-white font-sans transition-colors duration-300;
+}
+
+html.dark body {
+  background-color: #313338;
+  color: #dbdee1;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
