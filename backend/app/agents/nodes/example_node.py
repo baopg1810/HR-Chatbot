@@ -4,10 +4,10 @@ import re
 import unicodedata
 
 from app.agents.state import AgentState
+from app.agents.tool_choice import choose_tool_for_state, tool_choice_to_state
 from app.agents.tools.example_tool import get_hr_metrics_tool, search_policy_tool
 from app.models.schemas import ChatAction, ChatResponse
 from app.services.guardrails import evaluate_chat_guardrails, looks_like_hr_question
-from app.services.hris import should_call_hris_tool
 from app.services.llm import build_cited_answer, build_general_answer, build_refusal_answer
 from app.services.retrieval import user_has_readable_chunks
 
@@ -36,16 +36,7 @@ async def guardrail_node(state: AgentState) -> dict:
 
 
 async def classify_intent_node(state: AgentState) -> dict:
-    query = state.get("query", "")
-    if _is_ticket_detail_followup(state.get("conversation_context", ""), query):
-        return {"intent": "ticket_create"}
-    if should_call_hris_tool(query):
-        return {"intent": "hr_metric", "requested_tool": "hris"}
-    if _is_ticket_intent(query):
-        return {"intent": "ticket_create"}
-    if looks_like_hr_question(query):
-        return {"intent": "policy_question"}
-    return {"intent": "general"}
+    return tool_choice_to_state(await choose_tool_for_state(state))
 
 
 async def hr_metrics_node(state: AgentState) -> dict:

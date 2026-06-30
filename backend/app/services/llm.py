@@ -162,6 +162,45 @@ def generate_text(prompt: str) -> str | None:
     return _generate_text_with_ttft(prompt)
 
 
+def choose_chat_tool_with_gemini(
+    query: str,
+    *,
+    conversation_context: str | None = None,
+) -> dict[str, object] | None:
+    settings = get_settings()
+    langfuse = get_client()
+    with langfuse.start_as_current_observation(
+        as_type="generation",
+        name="gemini-tool-choice",
+        model=settings.model_name,
+        input={"query": query, "conversation_context": conversation_context or ""},
+    ) as gen:
+        keys = _ordered_google_api_keys()
+        if not keys or _running_under_pytest():
+            return None
+
+        last_error: Exception | None = None
+        for api_key in keys:
+            try:
+                result = _gemini_client(api_key).models.generate_content(
+                    model=settings.model_name,
+                    contents=_build_tool_choice_prompt(query, conversation_context),
+                    config=_tool_choice_config(settings.llm_temperature),
+                )
+            except Exception as exc:
+                last_error = exc
+                continue
+
+            function_call = _extract_function_call(result)
+            if function_call is None:
+                continue
+            gen.update(output=function_call)
+            return function_call
+
+        gen.update(metadata={"tool_choice_error": last_error.__class__.__name__ if last_error else "no_function_call"})
+        return None
+
+
 def stream_general_answer(query: str, user_name: str, conversation_context: str | None = None):
     history_block = _format_history_prompt_block(conversation_context)
     prompt = (
@@ -219,6 +258,97 @@ def _build_cited_prompt(
         f"CÂU HỎI:\n{query}\n\n"
         f"NGUỒN:\n{sources}\n\n"
         "CÂU TRẢ LỜI:"
+    )
+
+
+def _build_tool_choice_prompt(query: str, conversation_context: str | None = None) -> str:
+    history_block = _format_history_prompt_block(conversation_context)
+    return (
+        "You are the routing layer for an internal HR Helpdesk assistant.\n"
+        "Choose exactly one function/tool for the user's latest message. Do not answer the user.\n"
+        "Use get_hr_metrics only when the user asks for their own personal HRIS values, such as their "
+        "remaining leave balance, their own insurance status, or their own reward review status.\n"
+        "Use search_policy for HR policy, procedure, benefit, leave, insurance, contract, onboarding, "
+        "discipline, or internal-rule questions that need documents/citations.\n"
+        "Use request_ticket_escalation when the user explicitly wants HR support, wants to create/open/send "
+        "a ticket/request, or should be routed to HR for handling.\n"
+        "Use answer_general only for greetings, capability questions, or light general chat that does not "
+        "need HR data, policy retrieval, or HR escalation.\n"
+        "Safety guardrails have already run before this step.\n\n"
+        f"{history_block}"
+        f"Latest user message:\n{query}"
+    )
+
+
+def _tool_choice_config(temperature: float):
+    from google.genai import types
+
+    return types.GenerateContentConfig(
+        temperature=min(max(temperature, 0.0), 1.0),
+        tools=[
+            types.Tool(
+                functionDeclarations=[
+                    types.FunctionDeclaration(
+                        name="get_hr_metrics",
+                        description="Look up the current user's own personal HR metrics.",
+                        parametersJsonSchema={
+                            "type": "object",
+                            "properties": {
+                                "query": {"type": "string", "description": "The user's original question."}
+                            },
+                        },
+                    ),
+                    types.FunctionDeclaration(
+                        name="search_policy",
+                        description="Search readable HR policy documents for a policy/procedure answer.",
+                        parametersJsonSchema={
+                            "type": "object",
+                            "properties": {
+                                "query": {"type": "string", "description": "The HR policy question to search for."}
+                            },
+                            "required": ["query"],
+                        },
+                    ),
+                    types.FunctionDeclaration(
+                        name="request_ticket_escalation",
+                        description="Ask the user to confirm sending an HR escalation ticket/request.",
+                        parametersJsonSchema={
+                            "type": "object",
+                            "properties": {
+                                "message": {"type": "string", "description": "The user request to send to HR."},
+                                "reason": {
+                                    "type": "string",
+                                    "enum": ["no_source", "outside_scope", "sensitive", "user_requested", "low_confidence"],
+                                },
+                                "priority": {"type": "string", "enum": ["low", "normal", "high"]},
+                            },
+                            "required": ["message"],
+                        },
+                    ),
+                    types.FunctionDeclaration(
+                        name="answer_general",
+                        description="Answer without tools for greetings or general non-HR-routing messages.",
+                        parametersJsonSchema={
+                            "type": "object",
+                            "properties": {
+                                "query": {"type": "string", "description": "The user's original message."}
+                            },
+                        },
+                    ),
+                ]
+            )
+        ],
+        toolConfig=types.ToolConfig(
+            functionCallingConfig=types.FunctionCallingConfig(
+                mode=types.FunctionCallingConfigMode.ANY,
+                allowedFunctionNames=[
+                    "get_hr_metrics",
+                    "search_policy",
+                    "request_ticket_escalation",
+                    "answer_general",
+                ],
+            )
+        ),
     )
 
 
@@ -472,6 +602,25 @@ def _extract_generated_text(result: object) -> str | None:
         joined = "\n".join(piece for piece in pieces if piece).strip()
         if joined:
             return joined
+    return None
+
+
+def _extract_function_call(result: object) -> dict[str, object] | None:
+    candidates = getattr(result, "candidates", None) or []
+    for candidate in candidates:
+        content = getattr(candidate, "content", None)
+        parts = getattr(content, "parts", None) if content else None
+        if not parts:
+            continue
+        for part in parts:
+            function_call = getattr(part, "function_call", None) or getattr(part, "functionCall", None)
+            if function_call is None:
+                continue
+            name = getattr(function_call, "name", None)
+            if not name:
+                continue
+            args = getattr(function_call, "args", None) or {}
+            return {"name": str(name), "args": dict(args) if isinstance(args, dict) else {}}
     return None
 
 
