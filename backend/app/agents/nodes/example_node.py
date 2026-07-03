@@ -4,12 +4,23 @@ import re
 import unicodedata
 
 from app.agents.state import AgentState
+from app.agents.ticket_draft_agent import (
+    TICKET_CATEGORY_LABELS,
+    format_ticket_message,
+    run_ticket_draft_agent,
+)
 from app.agents.tool_choice import choose_tool_for_state, tool_choice_to_state
 from app.agents.tools.example_tool import get_hr_metrics_tool, search_policy_tool
 from app.config import get_settings
 from app.guardrails.config import guardrails_enabled
 from app.guardrails.messages import AMBIGUOUS_MESSAGE, SENSITIVE_DATA_MESSAGE
-from app.models.schemas import ChatAction, ChatResponse
+from app.models.schemas import ChatAction, ChatResponse, ChatWorkflowState, PendingTicketDraft
+from app.services.chat_session_state import (
+    clear_chat_session_state,
+    default_ticket_draft_state,
+    preserve_conversation_memory,
+    save_chat_session_state,
+)
 from app.services.guardrails import (
     check_input_safeguard,
     check_output_safeguard,
@@ -25,6 +36,20 @@ from app.services.retrieval import user_has_readable_chunks
 async def input_safeguard_node(state: AgentState) -> dict:
     query = state.get("query", "")
     decision = await check_input_safeguard(query, user_context=_user_context(state.get("current_user")))
+    if _active_flow(state) == "ticket_draft" and (decision.blocked or not decision.allowed):
+        local_guardrail = evaluate_chat_guardrails(query)
+        if local_guardrail.allowed:
+            decision = decision.model_copy(
+                update={
+                    "allowed": True,
+                    "blocked": False,
+                    "requires_handoff": False,
+                    "action": "allow",
+                    "user_message": "",
+                    "internal_reason": "active_ticket_draft_rule_allow",
+                    "reason_code": "allow",
+                }
+            )
     if decision.allowed and not decision.blocked:
         return {
             "input_safeguard": decision.model_dump(),
@@ -80,7 +105,11 @@ async def topic_scope_node(state: AgentState) -> dict:
         )
         return result
 
-    if decision.sensitivity == "confidential" and not _user_can_access_confidential_hr(state.get("current_user")):
+    if (
+        decision.sensitivity == "confidential"
+        and not _is_workplace_complaint_topic(decision.topic)
+        and not _user_can_access_confidential_hr(state.get("current_user"))
+    ):
         result.update(
             _blocked_guardrail_state(
                 state,
@@ -103,7 +132,11 @@ async def output_safeguard_node(state: AgentState) -> dict:
         user_message=state.get("query", ""),
         context_summary=_output_context_summary(state, citations),
         has_citations=bool(citations),
-        has_tool_result=any(getattr(action, "type", None) == "hr_metric_lookup" for action in actions),
+        has_tool_result=any(
+            getattr(action, "type", None)
+            in {"hr_metric_lookup", "ticket_draft_confirmation", "escalation_confirmation_required"}
+            for action in actions
+        ),
         topic=str(topic_scope.get("topic", "")),
     )
     if decision.action == "allow":
@@ -216,25 +249,81 @@ async def handle_no_source_node(state: AgentState) -> dict:
 
 async def handle_ticket_intent_node(state: AgentState) -> dict:
     query = state.get("query", "")
-    tool_decision = await check_tool_guardrail("create_hr_ticket", state.get("current_user"), side_effect=True)
-    if not tool_decision.allowed and tool_decision.action != "require_confirmation":
-        return _tool_blocked_state(tool_decision)
-
-    if not _has_ticket_description(query):
+    session_id = state.get("session_id")
+    if _is_cancel_ticket_draft_message(query) and _active_flow(state) == "ticket_draft":
+        if session_id and state.get("db") is not None:
+            await clear_chat_session_state(state.get("db"), session_id)
         return {
-            "answer": "Bạn cho mình biết nội dung cần HR hỗ trợ để mình tạo ticket nhé.",
+            "answer": "Mình đã hủy nháp ticket này.",
             "actions": [ChatAction(type="none", label="Không cần thao tác", data=None)],
             "citations": [],
             "refusal_reason": None,
             "escalated_ticket_id": None,
+            "session_state": preserve_conversation_memory(
+                ChatWorkflowState(),
+                state.get("session_state"),
+            ).model_dump(mode="json"),
         }
 
+    tool_decision = await check_tool_guardrail("create_hr_ticket", state.get("current_user"), side_effect=True)
+    if not tool_decision.allowed and tool_decision.action != "require_confirmation":
+        return _tool_blocked_state(tool_decision)
+
+    draft = run_ticket_draft_agent(query, state.get("conversation_context", ""))
+    if not draft.ready or not draft.title or not draft.category or not draft.description:
+        next_state = default_ticket_draft_state(session_id or "", state.get("session_state"))
+        if draft.missing_fields:
+            next_state.pending_ticket_draft.missing_fields = draft.missing_fields
+        if session_id and state.get("db") is not None:
+            await save_chat_session_state(state.get("db"), session_id, next_state)
+        return {
+            "answer": draft.question or "Bạn cho mình biết nội dung cần HR hỗ trợ để mình tạo ticket nhé.",
+            "actions": [ChatAction(type="none", label="Không cần thao tác", data=None)],
+            "citations": [],
+            "refusal_reason": None,
+            "escalated_ticket_id": None,
+            "session_state": next_state.model_dump(mode="json"),
+        }
+
+    next_state = preserve_conversation_memory(
+        ChatWorkflowState(
+            active_flow="ticket_draft",
+            pending_ticket_draft=PendingTicketDraft(
+                title=draft.title,
+                category=draft.category,
+                description=draft.description,
+                priority=draft.priority,
+                missing_fields=[],
+                session_id=session_id,
+            ),
+            last_intent="ticket_create",
+        ),
+        state.get("session_state"),
+    )
+    if session_id and state.get("db") is not None:
+        await save_chat_session_state(state.get("db"), session_id, next_state)
     return {
-        "answer": "Mình đã ghi nhận nội dung cần HR hỗ trợ. Bạn xác nhận gửi ticket cho HR nhé?",
-        "actions": [_escalation_action(query, "user_requested", state.get("session_id"))],
+        "answer": _ticket_draft_ready_answer(draft.title, draft.description),
+        "actions": [
+            ChatAction(
+                type="ticket_draft_confirmation",
+                label="Xác nhận yêu cầu hỗ trợ (AI đã điền sẵn)",
+                data={
+                    "title": draft.title,
+                    "category": draft.category,
+                    "category_label": TICKET_CATEGORY_LABELS[draft.category],
+                    "description": draft.description,
+                    "message": format_ticket_message(draft.title, draft.category, draft.description),
+                    "reason": "user_requested",
+                    "priority": draft.priority,
+                    "session_id": state.get("session_id"),
+                },
+            )
+        ],
         "citations": [],
         "refusal_reason": None,
         "escalated_ticket_id": None,
+        "session_state": next_state.model_dump(mode="json"),
     }
 
 
@@ -401,6 +490,40 @@ def _user_can_access_confidential_hr(user) -> bool:
     return getattr(user, "role", "") in {"hr_admin", "admin"}
 
 
+def _is_workplace_complaint_topic(topic: str) -> bool:
+    return topic in {
+        "workplace_harassment_complaint",
+        "workplace_misconduct",
+        "discrimination_complaint",
+        "bullying_complaint",
+        "retaliation_complaint",
+    }
+
+
+def _active_flow(state: AgentState) -> str:
+    return str((state.get("session_state") or {}).get("active_flow") or "none")
+
+
+def _is_cancel_ticket_draft_message(message: str) -> bool:
+    normalized = _normalize(message)
+    return bool(
+        re.fullmatch(r"(huy|thoi|cancel)", normalized)
+        or re.search(r"\b(khong\s+tao\s+nua|huy\s+ticket|huy\s+nhap|huy\s+draft|cancel\s+ticket)\b", normalized)
+    )
+
+
+def _ticket_draft_ready_answer(title: str, description: str) -> str:
+    normalized = _normalize(f"{title} {description}")
+    if "cham luong" in normalized or "tre luong" in normalized or "chua nhan luong" in normalized:
+        month_match = re.search(r"\bthang\s+([0-9]{1,2})\b", normalized)
+        suffix = f" tháng {month_match.group(1)}" if month_match else ""
+        return (
+            f"Mình đã chuẩn bị nháp ticket cho vấn đề chậm lương{suffix}. "
+            "Bạn kiểm tra lại thông tin bên dưới rồi bấm Gửi yêu cầu nếu đã đúng nhé."
+        )
+    return "Mình đã điền sẵn thông tin ticket. Bạn kiểm tra lại rồi bấm gửi yêu cầu nhé."
+
+
 def _citation_context_summary(citations) -> str:
     summaries = []
     for citation in citations[:3]:
@@ -422,6 +545,10 @@ def _output_context_summary(state: AgentState, citations) -> str:
     actions = state.get("actions", [])
     if any(getattr(action, "type", None) == "hr_metric_lookup" for action in actions):
         summaries.append("Tool result confirmed: HRIS personal metrics lookup completed for the authenticated user.")
+    if any(getattr(action, "type", None) == "ticket_draft_confirmation" for action in actions):
+        summaries.append("Tool result confirmed: a prefilled HR ticket draft is ready for user review, not submitted yet.")
+    if any(getattr(action, "type", None) == "escalation_confirmation_required" for action in actions):
+        summaries.append("Tool result confirmed: HR escalation confirmation is required before ticket submission.")
     return "\n".join(summaries)
 
 
@@ -458,10 +585,15 @@ def _is_ticket_detail_followup(conversation_context: str, query: str = "") -> bo
         "noi dung can hr ho tro",
         "cho minh biet noi dung can hr ho tro",
         "cho minh biet noi dung can nhan su ho tro",
+        "mo ta chi tiet van de",
+        "van de can hr ho tro",
+        "dien form ticket",
         "cung cap them thong tin de minh tao ticket",
         "minh tao ticket nhe",
     ]
-    has_pending_prompt = any(marker in normalized for marker in pending_markers) or ("noi dung" in normalized and "ticket" in normalized)
+    has_pending_prompt = any(marker in normalized for marker in pending_markers) or (
+        ("noi dung" in normalized or "mo ta" in normalized) and "ticket" in normalized
+    )
     has_recent_ticket_request = "ticket" in normalized and any(phrase in normalized for phrase in {"tao ticket", "t o ticket"})
     return has_pending_prompt or (has_recent_ticket_request and _has_ticket_description(query))
 

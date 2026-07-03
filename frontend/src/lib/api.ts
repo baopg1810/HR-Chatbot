@@ -33,7 +33,7 @@ export interface Citation {
 }
 
 export interface ChatAction {
-  type: 'hr_metric_lookup' | 'escalation_confirmation_required' | 'escalation_created' | 'none';
+  type: 'hr_metric_lookup' | 'ticket_draft_confirmation' | 'escalation_confirmation_required' | 'escalation_created' | 'none';
   label: string;
   data?: Record<string, unknown> | null;
 }
@@ -328,6 +328,13 @@ export async function listChatSessions(token: string): Promise<ChatSessionRecord
 
 export async function getChatSessionMessages(token: string, sessionId: string): Promise<ChatMessageRecord[]> {
   return apiRequest<ChatMessageRecord[]>(`/chat/sessions/${sessionId}/messages`, { token });
+}
+
+export async function clearChatSessionState(token: string, sessionId: string) {
+  return apiRequest(`/chat/sessions/${sessionId}/state/clear`, {
+    method: 'POST',
+    token,
+  });
 }
 
 async function apiRequest<T>(

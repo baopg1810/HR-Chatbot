@@ -4,6 +4,7 @@ from app.models.user import User
 from app.models.refresh_token import RefreshToken
 from app.models.document import Document
 from app.models.chat import ChatSession, ChatMessage
+from app.models.chat_session_state import ChatSessionState
 from app.models.query_log import QueryLog
 from app.models.trend_question import TrendQuestion
 from app.models.ticket import Ticket
@@ -18,6 +19,7 @@ __all__ = [
     "Document",
     "ChatSession",
     "ChatMessage",
+    "ChatSessionState",
     "QueryLog",
     "TrendQuestion",
     "Ticket",

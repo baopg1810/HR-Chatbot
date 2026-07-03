@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from langfuse import get_client, propagate_attributes
 
-from app.agents.graph import agent
+from app.agents.graph import agent, route_after_input_safeguard
 from app.agents.nodes.example_node import (
     classify_intent_node,
     guardrail_node,
@@ -21,15 +21,16 @@ from app.agents.nodes.example_node import (
     route_retrieval,
     topic_scope_node,
 )
-from app.schemas.schemas import ChatRequest, ChatResponse
+from app.schemas.schemas import ChatRequest, ChatResponse, ChatWorkflowState
 from app.models.schemas import ChatAction
 from app.models.user import User
 from app.api.deps import get_current_user_from_authorization_header
 from app.database.session import get_db
 
-from app.services.llm import build_conversation_context, stream_cited_answer, stream_general_answer
+from app.services.llm import build_adaptive_conversation_context, stream_cited_answer, stream_general_answer
 from app.services.trending import record_chat_query
 from app.services.rate_limit import enforce_chat_rate_limit
+from app.services.chat_session_state import clear_chat_session_state, get_chat_session_state, save_chat_session_state
 
 router = APIRouter()
 
@@ -90,7 +91,13 @@ async def chat(
             input=request.message,
             metadata={"user_email": current_user.email},
         ) as trace:
-            conversation_context = await _load_session_conversation_context(current_user, session_id, db)
+            session_state = await get_chat_session_state(db, session_id)
+            conversation_context, session_state = await _load_session_conversation_context(
+                current_user,
+                session_id,
+                db,
+                session_state,
+            )
             await _save_user_message(current_user, session_id, request.message, db)
             response = await _build_chat_response(
                 current_user,
@@ -98,6 +105,7 @@ async def chat(
                 session_id=session_id,
                 message_id=message_id,
                 conversation_context=conversation_context,
+                session_state=session_state,
                 db=db,
             )
             trace.update(output=response.answer)
@@ -146,7 +154,13 @@ async def _stream_live_chat_response(
         ) as trace:
             yield _sse_event("start", {"message_id": message_id, "session_id": session_id})
             try:
-                conversation_context = await _load_session_conversation_context(current_user, session_id, db)
+                session_state = await get_chat_session_state(db, session_id)
+                conversation_context, session_state = await _load_session_conversation_context(
+                    current_user,
+                    session_id,
+                    db,
+                    session_state,
+                )
                 await _save_user_message(current_user, session_id, request.message, db)
                 answer_chunks: list[str] = []
                 response: ChatResponse | None = None
@@ -157,6 +171,7 @@ async def _stream_live_chat_response(
                     session_id=session_id,
                     message_id=message_id,
                     conversation_context=conversation_context,
+                    session_state=session_state,
                     db=db,
                 ):
                     if "response" in stream_item:
@@ -198,19 +213,32 @@ async def _stream_chat_answer_chunks(
     session_id: str,
     message_id: str,
     conversation_context: str,
+    session_state: ChatWorkflowState,
     db: AsyncSession,
 ):
+    state_payload = session_state.model_dump(mode="json")
     state = {
         "query": request.message,
+        "latest_user_message": request.message,
         "current_user": current_user,
         "session_id": session_id,
         "message_id": message_id,
         "conversation_context": conversation_context,
+        "session_state": state_payload,
+        "runtime_context": _runtime_context(session_id, request.message, conversation_context, state_payload),
         "db": db,
     }
 
     state.update(await guardrail_node(state))
     if state.get("intent") == "blocked":
+        response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
+        async for chunk in _stream_finished_answer_chunks(response):
+            yield chunk
+        yield {"response": response}
+        return
+
+    if route_after_input_safeguard(state) == "handle_ticket_intent":
+        state.update(await handle_ticket_intent_node(state))
         response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
         async for chunk in _stream_finished_answer_chunks(response):
             yield chunk
@@ -299,24 +327,45 @@ def _no_action() -> ChatAction:
     return ChatAction(type="none", label="Không cần thao tác", data=None)
 
 
+def _runtime_context(
+    session_id: str,
+    latest_user_message: str,
+    conversation_context: str,
+    session_state: dict,
+) -> dict:
+    pending_ticket_draft = session_state.get("pending_ticket_draft")
+    return {
+        "session_id": session_id,
+        "latest_user_message": latest_user_message,
+        "active_flow": session_state.get("active_flow", "none"),
+        "pending_ticket_draft": pending_ticket_draft,
+        "conversation_context": conversation_context,
+    }
+
+
 async def _stream_finished_answer_chunks(response: ChatResponse):
     for chunk in _text_chunks(response.answer):
         yield {"text": chunk}
         await asyncio.sleep(0)
 
 
-async def _load_session_conversation_context(current_user: User, session_id: str, db: AsyncSession) -> str:
+async def _load_session_conversation_context(
+    current_user: User,
+    session_id: str,
+    db: AsyncSession,
+    session_state: ChatWorkflowState,
+) -> tuple[str, ChatWorkflowState]:
     from app.models.chat import ChatMessage, ChatSession
     from app.services.tickets import safe_parse_uuid
 
     user_uuid = safe_parse_uuid(current_user.id)
     session_uuid = safe_parse_uuid(session_id)
     if not user_uuid or not session_uuid:
-        return ""
+        return "", session_state
 
     db_session = await db.get(ChatSession, session_uuid)
     if db_session is None or db_session.user_id != user_uuid:
-        return ""
+        return "", session_state
 
     stmt = (
         select(ChatMessage.role, ChatMessage.content)
@@ -324,7 +373,22 @@ async def _load_session_conversation_context(current_user: User, session_id: str
         .order_by(ChatMessage.created_at.asc())
     )
     result = await db.execute(stmt)
-    return build_conversation_context([(role, content) for role, content in result.all()])
+    context_result = build_adaptive_conversation_context(
+        [(role, content) for role, content in result.all()],
+        existing_summary=session_state.conversation_summary,
+        summarized_message_count=session_state.conversation_summary_message_count,
+        summary_updated_at=session_state.conversation_summary_updated_at,
+    )
+    if context_result.summary_changed:
+        session_state = session_state.model_copy(
+            update={
+                "conversation_summary": context_result.conversation_summary,
+                "conversation_summary_message_count": context_result.conversation_summary_message_count,
+                "conversation_summary_updated_at": context_result.conversation_summary_updated_at,
+            }
+        )
+        await save_chat_session_state(db, session_id, session_state)
+    return context_result.context, session_state
 
 
 async def _build_chat_response(
@@ -334,15 +398,21 @@ async def _build_chat_response(
     session_id: str,
     message_id: str,
     conversation_context: str = "",
+    session_state: ChatWorkflowState | None = None,
     db: AsyncSession | None = None,
 ) -> ChatResponse:
+    session_state = session_state or ChatWorkflowState()
+    state_payload = session_state.model_dump(mode="json")
     result = await agent.ainvoke(
         {
             "query": request.message,
+            "latest_user_message": request.message,
             "current_user": current_user,
             "session_id": session_id,
             "message_id": message_id,
             "conversation_context": conversation_context,
+            "session_state": state_payload,
+            "runtime_context": _runtime_context(session_id, request.message, conversation_context, state_payload),
             "db": db,
         }
     )
@@ -475,6 +545,33 @@ async def get_chat_session_messages(
         }
         for message in messages
     ]
+
+
+@router.post("/chat/sessions/{session_id}/state/clear", response_model=ChatWorkflowState)
+async def clear_chat_session_workflow_state(
+    session_id: str,
+    authorization: str | None = Header(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> ChatWorkflowState:
+    current_user = await get_current_user_from_authorization_header(authorization, db)
+
+    from app.models.chat import ChatSession
+    from app.services.tickets import safe_parse_uuid
+
+    user_uuid = safe_parse_uuid(current_user.id)
+    session_uuid = safe_parse_uuid(session_id)
+    if not user_uuid or not session_uuid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ID format")
+
+    session = await db.get(ChatSession, session_uuid)
+    if session is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy cuộc trò chuyện")
+    if session.user_id != user_uuid and current_user.role not in {"hr_admin", "admin"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bạn không có quyền cập nhật trạng thái cuộc trò chuyện này",
+        )
+    return await clear_chat_session_state(db, session_id)
 
 
 async def _record_and_return_chat(current_user: User, request: ChatRequest, response: ChatResponse) -> ChatResponse:

@@ -20,8 +20,13 @@ from app.agents.state import AgentState
 
 
 def route_after_input_safeguard(state: AgentState) -> str:
-    if is_blocked(state):
+    decision = state.get("input_safeguard") or {}
+    if decision.get("blocked") is True or is_blocked(state):
         return "output_safeguard"
+    if (state.get("session_state") or {}).get("active_flow") == "ticket_draft":
+        return "handle_ticket_intent"
+    if decision.get("requires_handoff") is True and decision.get("reason_code") == "workplace_misconduct":
+        return "handle_ticket_intent"
     return "topic_scope"
 
 
@@ -52,6 +57,7 @@ def build_graph():
         route_after_input_safeguard,
         {
             "topic_scope": "topic_scope",
+            "handle_ticket_intent": "handle_ticket_intent",
             "output_safeguard": "output_safeguard",
         },
     )

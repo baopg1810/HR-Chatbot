@@ -112,6 +112,11 @@ def _is_ticket_intent(message: str) -> bool:
     return bool(
         re.search(r"\b(tao|mo|gui|lap)\s+(ticket|phieu|yeu\s+cau)\b", normalized)
         or re.search(r"\b(ticket|phieu\s+ho\s+tro|yeu\s+cau\s+ho\s+tro)\b", normalized)
+        or re.search(r"\b(khieu\s+nai|phan\s+anh|to\s+cao)\b", normalized)
+        or re.search(
+            r"\b(quay\s+roi|harassment|bat\s+nat|bullying|ky\s+thi|discrimination|phan\s+biet\s+doi\s+xu|tra\s+dua|retaliation|misconduct)\b",
+            normalized,
+        )
     )
 
 
@@ -124,11 +129,14 @@ def _is_ticket_detail_followup(conversation_context: str, query: str = "") -> bo
         "noi dung can hr ho tro",
         "cho minh biet noi dung can hr ho tro",
         "cho minh biet noi dung can nhan su ho tro",
+        "mo ta chi tiet van de",
+        "van de can hr ho tro",
+        "dien form ticket",
         "cung cap them thong tin de minh tao ticket",
         "minh tao ticket nhe",
     ]
     has_pending_prompt = any(marker in normalized for marker in pending_markers) or (
-        "noi dung" in normalized and "ticket" in normalized
+        ("noi dung" in normalized or "mo ta" in normalized) and "ticket" in normalized
     )
     has_recent_ticket_request = "ticket" in normalized and any(
         phrase in normalized for phrase in {"tao ticket", "t o ticket"}

@@ -23,3 +23,10 @@ GENERAL_SAFETY_MESSAGE = (
     "Mình không thể hỗ trợ yêu cầu này. Bạn có thể hỏi về chính sách nhân sự, quyền lợi, nghỉ phép, "
     "lương thưởng, hợp đồng hoặc quy trình HR nội bộ."
 )
+
+WORKPLACE_MISCONDUCT_MESSAGE = (
+    "Mình rất tiếc khi bạn gặp tình huống này. Đây là vấn đề HR nhạy cảm và nên được xử lý bảo mật. "
+    "Mình có thể giúp bạn tạo khiếu nại nội bộ hoặc chuyển thông tin đến bộ phận HR phụ trách. "
+    "Bạn chỉ cần cung cấp các thông tin cần thiết như thời gian, địa điểm, người liên quan, "
+    "mô tả sự việc và bằng chứng nếu có."
+)

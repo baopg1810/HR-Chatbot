@@ -94,6 +94,7 @@ class OpenAISafeguardClient(SafeguardClient):
             OUTPUT_SAFEGUARD_PROMPT
             .replace("{{USER_MESSAGE}}", str(context.get("user_message", "")))
             .replace("{{CONTEXT_SUMMARY}}", _output_context_summary(context))
+            .replace("{{TOOL_RESULTS_SUMMARY}}", _tool_results_summary(context))
             .replace("{{DRAFT_ANSWER}}", text)
         )
         try:
@@ -133,6 +134,7 @@ async def _check_output_with_chat_completion(text: str, context: dict | None = N
         OUTPUT_SAFEGUARD_PROMPT
         .replace("{{USER_MESSAGE}}", str(context.get("user_message", "")))
         .replace("{{CONTEXT_SUMMARY}}", _output_context_summary(context))
+        .replace("{{TOOL_RESULTS_SUMMARY}}", _tool_results_summary(context))
         .replace("{{DRAFT_ANSWER}}", text)
     )
     raw_text = await _safeguard_chat_completion(prompt)
@@ -235,6 +237,16 @@ def _output_context_summary(context: dict) -> str:
     if topic == "hr_helpdesk_usage":
         parts.append("This is an HR helpdesk capability or usage answer; it does not require policy-document citations.")
     return "\n".join(parts)
+
+
+def _tool_results_summary(context: dict) -> str:
+    parts = []
+    if context.get("has_tool_result"):
+        parts.append("A trusted internal tool/action result is present for this draft answer.")
+    topic = str(context.get("topic", "")).strip()
+    if topic:
+        parts.append(f"Topic: {topic}")
+    return "\n".join(parts) or "No tool result."
 
 
 def should_skip_provider_calls() -> bool:

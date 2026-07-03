@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import math
+import logging
 import os
 import re
 import unicodedata
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
 from threading import Lock
 from time import perf_counter
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Callable, Sequence
 
 from app.config import get_settings
 from app.models.schemas import Citation
@@ -22,11 +24,35 @@ DenseEmbedding = list[float]
 Embedding = SparseEmbedding | DenseEmbedding
 ChatHistoryItem = tuple[str, str]
 
+logger = logging.getLogger(__name__)
 _KEY_LOCK = Lock()
 _NEXT_KEY_INDEX = 0
 _INTERNAL_CHUNK_SECTION_RE = re.compile(r"^chunk-\d+$", re.IGNORECASE)
 _INTERNAL_CHUNK_REFERENCE_RE = re.compile(r"\s*-\s*chunk-\d+\b", re.IGNORECASE)
 _STANDALONE_CHUNK_REFERENCE_RE = re.compile(r"\bchunk-\d+\b", re.IGNORECASE)
+_FALLBACK_INPUT_TOKEN_LIMIT = 8192
+_FALLBACK_OUTPUT_TOKEN_LIMIT = 1024
+_PROMPT_TOKEN_MARGIN = 128
+_MAX_HISTORY_TOKEN_BUDGET = 16000
+_MIN_HISTORY_TOKEN_BUDGET = 128
+_SUMMARY_TAIL_MESSAGE_LIMIT = 8
+_MIN_RECENT_RAW_TURNS = 2
+
+
+@dataclass(frozen=True)
+class ModelTokenLimits:
+    input_token_limit: int
+    output_token_limit: int
+    source: str = "model"
+
+
+@dataclass(frozen=True)
+class ConversationContextResult:
+    context: str
+    conversation_summary: str | None
+    conversation_summary_message_count: int
+    conversation_summary_updated_at: str | None
+    summary_changed: bool = False
 
 
 def embed_query_text(text: str) -> Embedding:
@@ -83,18 +109,118 @@ def has_meaningful_sparse_overlap(
     return False
 
 
-def build_conversation_context(history: Sequence[ChatHistoryItem], *, recent_turn_limit: int = 3) -> str:
-    turns = _history_items_to_turns(history)
-    if not turns:
-        return ""
+def get_model_token_limits(model_name: str | None = None) -> ModelTokenLimits:
+    settings = get_settings()
+    model = model_name or settings.model_name
+    return _get_model_token_limits_cached(model)
 
-    older_turns = turns[:-recent_turn_limit] if len(turns) > recent_turn_limit else []
-    recent_turns = turns[-recent_turn_limit:]
-    sections: list[str] = []
-    if older_turns:
-        sections.append("Tóm tắt các trao đổi cũ hơn:\n" + _summarize_turns(older_turns))
-    sections.append("3 lượt hỏi đáp gần nhất:\n" + _format_recent_turns(recent_turns))
-    return "\n\n".join(sections)
+
+@lru_cache(maxsize=16)
+def _get_model_token_limits_cached(model_name: str) -> ModelTokenLimits:
+    settings = get_settings()
+    keys = _ordered_google_api_keys()
+    if not keys:
+        if settings.app_env == "production":
+            raise RuntimeError("Gemini API key is not configured.")
+        return ModelTokenLimits(_FALLBACK_INPUT_TOKEN_LIMIT, _FALLBACK_OUTPUT_TOKEN_LIMIT, source="fallback")
+    if _running_under_pytest():
+        return ModelTokenLimits(_FALLBACK_INPUT_TOKEN_LIMIT, _FALLBACK_OUTPUT_TOKEN_LIMIT, source="pytest_fallback")
+
+    last_error: Exception | None = None
+    for api_key in keys:
+        try:
+            model_info = _gemini_client(api_key).models.get(model=model_name)
+            input_limit = _coerce_positive_int(
+                getattr(model_info, "input_token_limit", None)
+                or getattr(model_info, "inputTokenLimit", None)
+            )
+            output_limit = _coerce_positive_int(
+                getattr(model_info, "output_token_limit", None)
+                or getattr(model_info, "outputTokenLimit", None)
+            )
+            if input_limit and output_limit:
+                return ModelTokenLimits(input_limit, output_limit)
+        except Exception as exc:
+            last_error = exc
+            continue
+
+    if settings.app_env == "production" and last_error is not None:
+        raise last_error
+    return ModelTokenLimits(_FALLBACK_INPUT_TOKEN_LIMIT, _FALLBACK_OUTPUT_TOKEN_LIMIT, source="fallback")
+
+
+def count_prompt_tokens(prompt: str, model_name: str | None = None) -> int:
+    if not prompt:
+        return 0
+    settings = get_settings()
+    model = model_name or settings.model_name
+    keys = _ordered_google_api_keys()
+    if not keys:
+        if settings.app_env == "production":
+            raise RuntimeError("Gemini API key is not configured.")
+        return _approximate_token_count(prompt)
+    if _running_under_pytest():
+        return _approximate_token_count(prompt)
+
+    last_error: Exception | None = None
+    for api_key in keys:
+        try:
+            result = _gemini_client(api_key).models.count_tokens(model=model, contents=prompt)
+            total = _coerce_positive_int(
+                getattr(result, "total_tokens", None)
+                or getattr(result, "totalTokens", None)
+            )
+            if total is not None:
+                return total
+        except Exception as exc:
+            last_error = exc
+            continue
+
+    if settings.app_env == "production" and last_error is not None:
+        raise last_error
+    return _approximate_token_count(prompt)
+
+
+def build_conversation_context(
+    history: Sequence[ChatHistoryItem],
+    *,
+    recent_turn_limit: int | None = None,
+) -> str:
+    return build_adaptive_conversation_context(history, max_raw_turns=recent_turn_limit).context
+
+
+def build_adaptive_conversation_context(
+    history: Sequence[ChatHistoryItem],
+    *,
+    existing_summary: str | None = None,
+    summarized_message_count: int = 0,
+    summary_updated_at: str | None = None,
+    max_raw_turns: int | None = None,
+    model_name: str | None = None,
+) -> ConversationContextResult:
+    items = [(str(role), str(content)) for role, content in history]
+    if not items:
+        return ConversationContextResult("", existing_summary, 0, summary_updated_at, summary_changed=False)
+
+    summary, summary_count, updated_at, changed = _refresh_conversation_summary(
+        items,
+        existing_summary=existing_summary,
+        summarized_message_count=summarized_message_count,
+        summary_updated_at=summary_updated_at,
+    )
+    raw_items = items[summary_count:]
+    raw_turns = _history_items_to_turns(raw_items)
+    if max_raw_turns is not None and max_raw_turns >= 0:
+        raw_turns = raw_turns[-max_raw_turns:]
+
+    context = _pack_conversation_context(summary, raw_turns, model_name=model_name)
+    return ConversationContextResult(
+        context=context,
+        conversation_summary=summary,
+        conversation_summary_message_count=summary_count,
+        conversation_summary_updated_at=updated_at,
+        summary_changed=changed,
+    )
 
 
 def build_cited_answer(
@@ -134,28 +260,6 @@ def stream_cited_answer(
         yield token
     if not yielded:
         yield _build_local_cited_answer(query, citations)
-
-
-def build_general_answer(query: str, user_name: str, conversation_context: str | None = None) -> str:
-    history_block = _format_history_prompt_block(conversation_context)
-    prompt = (
-        "Bạn là HR Helpdesk AI cho nhân viên Việt Nam.\n"
-        "Trả lời bằng tiếng Việt có dấu, ngắn gọn, thân thiện.\n"
-        "Nếu câu hỏi cần chính sách nội bộ cụ thể mà chưa có tài liệu trích dẫn, "
-        "hãy nói rõ cần bổ sung tài liệu HR hoặc tạo ticket cho HR, không bịa quy định.\n\n"
-        f"{history_block}"
-        f"Nhân viên: {user_name}\n"
-        f"Câu hỏi: {query}\n"
-        "Câu trả lời:"
-    )
-    generated = _generate_text_with_ttft(prompt)
-    if generated:
-        return generated
-    return (
-        f"Xin chào {user_name}. Tôi có thể hỗ trợ các câu hỏi nhân sự, "
-        "nhưng hiện chưa có tài liệu HR phù hợp để trả lời có trích dẫn. "
-        "Bạn có thể upload tài liệu chính sách hoặc tạo ticket để HR xử lý."
-    )
 
 
 def generate_text(prompt: str) -> str | None:
@@ -201,18 +305,20 @@ def choose_chat_tool_with_gemini(
         return None
 
 
-def stream_general_answer(query: str, user_name: str, conversation_context: str | None = None):
-    history_block = _format_history_prompt_block(conversation_context)
-    prompt = (
-        "Bạn là HR Helpdesk AI cho nhân viên Việt Nam.\n"
-        "Trả lời bằng tiếng Việt có dấu, ngắn gọn, thân thiện.\n"
-        "Nếu câu hỏi cần chính sách nội bộ cụ thể mà chưa có tài liệu trích dẫn, "
-        "hãy nói rõ cần bổ sung tài liệu HR hoặc tạo ticket cho HR, không bịa quy định.\n\n"
-        f"{history_block}"
-        f"Nhân viên: {user_name}\n"
-        f"Câu hỏi: {query}\n"
-        "Câu trả lời:"
+def build_general_answer(query: str, user_name: str, conversation_context: str | None = None) -> str:
+    prompt = _build_general_prompt(query, user_name, conversation_context)
+    generated = _generate_text_with_ttft(prompt)
+    if generated:
+        return generated
+    return (
+        f"Xin chào {user_name}. Tôi có thể hỗ trợ các câu hỏi nhân sự, "
+        "nhưng hiện chưa có tài liệu HR phù hợp để trả lời có trích dẫn. "
+        "Bạn có thể upload tài liệu chính sách hoặc tạo ticket để HR xử lý."
     )
+
+
+def stream_general_answer(query: str, user_name: str, conversation_context: str | None = None):
+    prompt = _build_general_prompt(query, user_name, conversation_context)
     yielded = False
     for token in _stream_with_gemini(prompt):
         yielded = True
@@ -223,6 +329,23 @@ def stream_general_answer(query: str, user_name: str, conversation_context: str 
             "nhưng hiện chưa có tài liệu HR phù hợp để trả lời có trích dẫn. "
             "Bạn có thể upload tài liệu chính sách hoặc tạo ticket để HR xử lý."
         )
+
+
+def _build_general_prompt(query: str, user_name: str, conversation_context: str | None = None) -> str:
+    def render(history: str) -> str:
+        history_block = _format_history_prompt_block(history)
+        return (
+            "Bạn là HR Helpdesk AI cho nhân viên Việt Nam.\n"
+            "Trả lời bằng tiếng Việt có dấu, ngắn gọn, thân thiện.\n"
+            "Nếu câu hỏi cần chính sách nội bộ cụ thể mà chưa có tài liệu trích dẫn, "
+            "hãy nói rõ cần bổ sung tài liệu HR hoặc tạo ticket cho HR, không bịa quy định.\n\n"
+            f"{history_block}"
+            f"Nhân viên: {user_name}\n"
+            f"Câu hỏi: {query}\n"
+            "Câu trả lời:"
+        )
+
+    return build_prompt_with_fitted_history(conversation_context, render)
 
 
 def build_refusal_answer(reason: RefusalReason) -> str:
@@ -240,19 +363,40 @@ def _build_cited_prompt(
     citations: list[Citation],
     conversation_context: str | None = None,
 ) -> str:
-    source_blocks = []
-    for index, citation in enumerate(citations[:3], start=1):
-        source_blocks.append(
-            f"[{index}] {_citation_source_summary(citation)}\n"
-            f"{citation.excerpt}"
+    prompt = ""
+    for excerpt_limit in (None, 1600, 1000, 700, 450):
+        prompt = build_prompt_with_fitted_history(
+            conversation_context,
+            lambda history, limit=excerpt_limit: _render_cited_prompt(
+                query,
+                citations,
+                history,
+                excerpt_limit=limit,
+            ),
         )
-    sources = "\n\n".join(source_blocks)
+        if _prompt_fits_model(prompt):
+            return prompt
+    return prompt
+
+
+def _render_cited_prompt(
+    query: str,
+    citations: list[Citation],
+    conversation_context: str | None,
+    *,
+    excerpt_limit: int | None,
+) -> str:
+    sources = "\n\n".join(
+        _citation_prompt_block(index, citation, excerpt_limit=excerpt_limit)
+        for index, citation in enumerate(citations[:3], start=1)
+    )
     history_block = _format_history_prompt_block(conversation_context)
     return (
         "Bạn là HR Helpdesk AI. Hãy trả lời câu hỏi nhân sự bằng tiếng Việt có dấu.\n"
         "Chỉ sử dụng thông tin trong phần NGUỒN. Không bịa chính sách, số liệu hoặc điều kiện ngoài nguồn.\n"
         "Nếu nguồn không đủ để kết luận, hãy nói rõ phần chưa đủ và đề nghị chuyển HR.\n"
-        "Có thể dùng LỊCH SỬ HỘI THOẠI để hiểu ngữ cảnh hoặc câu hỏi nối tiếp, nhưng không dùng lịch sử làm nguồn chính sách.\n"
+        "Có thể dùng LỊCH SỬ HỘI THOẠI để hiểu ngữ cảnh hoặc câu hỏi nối tiếp, "
+        "nhưng không dùng lịch sử làm nguồn chính sách.\n"
         "Trả lời tự nhiên, ngắn gọn, và nhắc tên tài liệu/điều mục liên quan khi phù hợp.\n\n"
         f"{history_block}"
         f"CÂU HỎI:\n{query}\n\n"
@@ -261,23 +405,33 @@ def _build_cited_prompt(
     )
 
 
+def _citation_prompt_block(index: int, citation: Citation, *, excerpt_limit: int | None) -> str:
+    excerpt = citation.excerpt
+    if excerpt_limit is not None:
+        excerpt = _compact_text(excerpt, max_len=excerpt_limit)
+    return f"[{index}] {_citation_source_summary(citation)}\n{excerpt}"
+
+
 def _build_tool_choice_prompt(query: str, conversation_context: str | None = None) -> str:
-    history_block = _format_history_prompt_block(conversation_context)
-    return (
-        "You are the routing layer for an internal HR Helpdesk assistant.\n"
-        "Choose exactly one function/tool for the user's latest message. Do not answer the user.\n"
-        "Use get_hr_metrics only when the user asks for their own personal HRIS values, such as their "
-        "remaining leave balance, their own insurance status, or their own reward review status.\n"
-        "Use search_policy for HR policy, procedure, benefit, leave, insurance, contract, onboarding, "
-        "discipline, or internal-rule questions that need documents/citations.\n"
-        "Use request_ticket_escalation when the user explicitly wants HR support, wants to create/open/send "
-        "a ticket/request, or should be routed to HR for handling.\n"
-        "Use answer_general only for greetings, capability questions, or light general chat that does not "
-        "need HR data, policy retrieval, or HR escalation.\n"
-        "Safety guardrails have already run before this step.\n\n"
-        f"{history_block}"
-        f"Latest user message:\n{query}"
-    )
+    def render(history: str) -> str:
+        history_block = _format_history_prompt_block(history)
+        return (
+            "You are the routing layer for an internal HR Helpdesk assistant.\n"
+            "Choose exactly one function/tool for the user's latest message. Do not answer the user.\n"
+            "Use get_hr_metrics only when the user asks for their own personal HRIS values, such as their "
+            "remaining leave balance, their own insurance status, or their own reward review status.\n"
+            "Use search_policy for HR policy, procedure, benefit, leave, insurance, contract, onboarding, "
+            "discipline, or internal-rule questions that need documents/citations.\n"
+            "Use request_ticket_escalation when the user explicitly wants HR support, wants to create/open/send "
+            "a ticket/request, or should be routed to HR for handling.\n"
+            "Use answer_general only for greetings, capability questions, or light general chat that does not "
+            "need HR data, policy retrieval, or HR escalation.\n"
+            "Safety guardrails have already run before this step.\n\n"
+            f"{history_block}"
+            f"Latest user message:\n{query}"
+        )
+
+    return build_prompt_with_fitted_history(conversation_context, render)
 
 
 def _tool_choice_config(temperature: float):
@@ -356,6 +510,203 @@ def _format_history_prompt_block(conversation_context: str | None) -> str:
     if not conversation_context:
         return ""
     return f"LỊCH SỬ HỘI THOẠI:\n{_remove_internal_chunk_references(conversation_context)}\n\n"
+
+
+def build_prompt_with_fitted_history(
+    conversation_context: str | None,
+    prompt_builder: Callable[[str], str],
+    *,
+    model_name: str | None = None,
+) -> str:
+    prompt = prompt_builder("")
+    if not conversation_context:
+        return prompt
+
+    fallback_prompt = prompt
+    for history_variant in _history_prompt_variants(conversation_context):
+        candidate = prompt_builder(history_variant)
+        fallback_prompt = candidate
+        if _prompt_fits_model(candidate, model_name=model_name):
+            return candidate
+    return fallback_prompt
+
+
+def _refresh_conversation_summary(
+    history: Sequence[ChatHistoryItem],
+    *,
+    existing_summary: str | None,
+    summarized_message_count: int,
+    summary_updated_at: str | None,
+) -> tuple[str | None, int, str | None, bool]:
+    current_count = max(0, min(int(summarized_message_count or 0), len(history)))
+    target_count = max(current_count, len(history) - _SUMMARY_TAIL_MESSAGE_LIMIT)
+    if target_count <= current_count:
+        return existing_summary, current_count, summary_updated_at, False
+
+    new_items = history[current_count:target_count]
+    if not new_items:
+        return existing_summary, current_count, summary_updated_at, False
+
+    generated = _summarize_conversation_with_llm(existing_summary, new_items)
+    if not generated:
+        return existing_summary, current_count, summary_updated_at, False
+
+    return generated, target_count, datetime.now(timezone.utc).isoformat(), True
+
+
+def _summarize_conversation_with_llm(
+    existing_summary: str | None,
+    new_items: Sequence[ChatHistoryItem],
+) -> str | None:
+    turns = _history_items_to_turns(new_items)
+    if not turns:
+        return None
+
+    existing_block = existing_summary or "Chưa có tóm tắt trước đó."
+    prompt = (
+        "Bạn là bộ nhớ hội thoại cho HR Helpdesk AI.\n"
+        "Hãy cập nhật bản tóm tắt tiếng Việt cho các lượt cũ, chỉ dựa trên nội dung được cung cấp.\n"
+        "Giữ lại: ý định người dùng, thông tin cá nhân người dùng tự cung cấp, vấn đề HR/ticket đang mở, "
+        "các chi tiết cần nhớ để hiểu câu hỏi nối tiếp.\n"
+        "Không thêm chính sách, số liệu, kết luận hoặc chi tiết không có trong hội thoại.\n"
+        "Trả về duy nhất bản tóm tắt gạch đầu dòng, ngắn gọn.\n\n"
+        f"TÓM TẮT HIỆN CÓ:\n{existing_block}\n\n"
+        f"LƯỢT MỚI CẦN NHẬP VÀO TÓM TẮT:\n{_format_recent_turns(turns)}\n\n"
+        "TÓM TẮT CẬP NHẬT:"
+    )
+    try:
+        generated = _generate_text_with_ttft(prompt)
+    except Exception:
+        logger.warning("Conversation summary generation failed; using raw recent context.", exc_info=True)
+        return None
+    if not generated:
+        return None
+    return _compact_text(generated, max_len=4000)
+
+
+def _pack_conversation_context(
+    summary: str | None,
+    raw_turns: Sequence[tuple[str, str]],
+    *,
+    model_name: str | None,
+) -> str:
+    turns = list(raw_turns)
+    budget = _conversation_history_token_budget(model_name)
+    min_raw_count = min(_MIN_RECENT_RAW_TURNS, len(turns))
+
+    for raw_count in range(len(turns), min_raw_count - 1, -1):
+        candidate = _render_conversation_context(summary, turns[-raw_count:] if raw_count else [])
+        if _context_fits_budget(candidate, budget, model_name=model_name):
+            return candidate
+
+    if summary and min_raw_count:
+        recent_turns = turns[-min_raw_count:]
+        for summary_variant in _summary_shrink_variants(summary):
+            candidate = _render_conversation_context(summary_variant, recent_turns)
+            if _context_fits_budget(candidate, budget, model_name=model_name):
+                return candidate
+
+    for raw_count in range(min_raw_count, -1, -1):
+        candidate = _render_conversation_context(None, turns[-raw_count:] if raw_count else [])
+        if _context_fits_budget(candidate, budget, model_name=model_name):
+            return candidate
+
+    return ""
+
+
+def _render_conversation_context(summary: str | None, turns: Sequence[tuple[str, str]]) -> str:
+    sections: list[str] = []
+    if summary:
+        sections.append("Tóm tắt LLM các trao đổi cũ hơn:\n" + summary)
+    if turns:
+        sections.append(f"{len(turns)} lượt hỏi đáp gần đây:\n" + _format_recent_turns(turns))
+    return "\n\n".join(sections)
+
+
+def _history_prompt_variants(conversation_context: str) -> list[str]:
+    cleaned = _remove_internal_chunk_references(conversation_context).strip()
+    variants = [cleaned]
+    without_summary = _drop_summary_sections(cleaned)
+    if without_summary:
+        variants.append(without_summary)
+    for max_len in (2400, 1200, 600):
+        variants.append(_compact_text(cleaned, max_len=max_len))
+    variants.append("")
+    return _unique_texts(variants)
+
+
+def _drop_summary_sections(conversation_context: str) -> str:
+    sections = [section.strip() for section in conversation_context.split("\n\n") if section.strip()]
+    kept = [section for section in sections if not _normalize_for_matching(section).startswith("tom tat")]
+    return "\n\n".join(kept)
+
+
+def _summary_shrink_variants(summary: str) -> list[str]:
+    return _unique_texts(
+        [
+            summary,
+            _compact_text(summary, max_len=2400),
+            _compact_text(summary, max_len=1200),
+            _compact_text(summary, max_len=600),
+            "",
+        ]
+    )
+
+
+def _context_fits_budget(context: str, budget: int, *, model_name: str | None) -> bool:
+    if not context:
+        return True
+    return count_prompt_tokens(context, model_name=model_name) <= budget
+
+
+def _prompt_fits_model(prompt: str, *, model_name: str | None = None) -> bool:
+    return count_prompt_tokens(prompt, model_name=model_name) <= _max_prompt_input_tokens(model_name)
+
+
+def _conversation_history_token_budget(model_name: str | None = None) -> int:
+    usable = _max_prompt_input_tokens(model_name)
+    return max(_MIN_HISTORY_TOKEN_BUDGET, min(int(usable * 0.35), _MAX_HISTORY_TOKEN_BUDGET))
+
+
+def _max_prompt_input_tokens(model_name: str | None = None) -> int:
+    limits = get_model_token_limits(model_name)
+    output_reserve = min(
+        limits.output_token_limit,
+        max(256, limits.input_token_limit // 4),
+        4096,
+    )
+    return max(_MIN_HISTORY_TOKEN_BUDGET, limits.input_token_limit - output_reserve - _PROMPT_TOKEN_MARGIN)
+
+
+def _coerce_positive_int(value: object) -> int | None:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed > 0 else None
+
+
+def _approximate_token_count(text: str) -> int:
+    return max(1, math.ceil(len(str(text)) / 4))
+
+
+def _unique_texts(values: Sequence[str]) -> list[str]:
+    unique: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        normalized = value.strip()
+        if normalized in seen:
+            continue
+        unique.append(normalized)
+        seen.add(normalized)
+    return unique
+
+
+def _normalize_for_matching(message: str) -> str:
+    normalized = unicodedata.normalize("NFKD", message.lower().replace("đ", "d").replace("Đ", "D"))
+    ascii_text = "".join(char for char in normalized if not unicodedata.combining(char))
+    ascii_text = re.sub(r"[^a-z0-9\s]", " ", ascii_text)
+    return re.sub(r"\s+", " ", ascii_text).strip()
 
 
 def _history_items_to_turns(history: Sequence[ChatHistoryItem]) -> list[tuple[str, str]]:

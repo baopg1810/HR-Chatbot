@@ -5,6 +5,7 @@ import { Message } from '../types';
 import { cn } from '../lib/utils';
 import {
   ChatSessionRecord,
+  clearChatSessionState,
   createEscalation,
   getChatSessionMessages,
   listChatSessions,
@@ -27,6 +28,26 @@ type MarkdownBlock =
   | { type: 'paragraph'; content: string }
   | { type: 'unordered-list'; items: string[] }
   | { type: 'ordered-list'; items: string[] };
+
+type ChatAttachment = NonNullable<Message['attachments']>[number];
+type TicketCategory = 'leave' | 'benefits' | 'equipment' | 'documents' | 'other';
+
+interface TicketDraftFormValues {
+  title: string;
+  category: TicketCategory;
+  description: string;
+  reason: string;
+  priority: string;
+  sessionId?: string | null;
+}
+
+const ticketCategories: { value: TicketCategory; label: string }[] = [
+  { value: 'leave', label: 'Nghỉ phép & Thai sản' },
+  { value: 'benefits', label: 'Lương & Phúc lợi' },
+  { value: 'equipment', label: 'Thiết bị & IT Support' },
+  { value: 'documents', label: 'Giấy tờ & Thủ tục hành chính' },
+  { value: 'other', label: 'Khác' },
+];
 
 export function Chat() {
   const { user } = useAuth();
@@ -226,7 +247,66 @@ export function Chat() {
     }
   };
 
-  const handleDismissEscalation = (messageId: string, attachmentIndex: number) => {
+  const handleConfirmTicketDraft = async (
+    messageId: string,
+    attachmentIndex: number,
+    draft: TicketDraftFormValues,
+  ) => {
+    if (!user) return;
+    setIsLoading(true);
+    try {
+      const ticket = await createEscalation(user.token, {
+        message: formatTicketDraftMessage(draft),
+        reason: draft.reason || 'user_requested',
+        priority: draft.priority || 'normal',
+        session_id: draft.sessionId || sessionId,
+      });
+
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === messageId
+            ? {
+              ...message,
+              attachments: message.attachments?.map((attachment, index) =>
+                index === attachmentIndex
+                  ? {
+                    name: `Đã tạo ticket ${ticket.id}`,
+                    url: 'escalation_created',
+                    data: { ticket_id: ticket.id, status: ticket.status },
+                  }
+                  : attachment,
+              ),
+            }
+            : message,
+        ),
+      );
+    } catch (err) {
+      const errorText = err instanceof Error ? err.message : 'Không thể tạo ticket.';
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          sender: 'ai',
+          text: errorText,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDismissEscalation = async (messageId: string, attachmentIndex: number) => {
+    const attachment = messages.find((message) => message.id === messageId)?.attachments?.[attachmentIndex];
+    const payloadSessionId =
+      typeof attachment?.data?.session_id === 'string' ? attachment.data.session_id : sessionId;
+    if (user && attachment?.url === 'ticket_draft_confirmation' && payloadSessionId) {
+      try {
+        await clearChatSessionState(user.token, payloadSessionId);
+      } catch (err) {
+        console.error('Error clearing ticket draft state:', err);
+      }
+    }
     setMessages((prev) =>
       prev.map((message) =>
         message.id === messageId
@@ -286,56 +366,66 @@ export function Chat() {
                     <MarkdownMessage text={msg.text} />
                   )}
 
-                  {msg.attachments?.map((attachment, i) => (
-                    <div key={`${attachment.name}-${i}`} className="bg-white dark:bg-discord-sidebar border border-[#a6f4df] dark:border-discord-accent/30 ring-1 ring-brand-mint dark:ring-discord-accent/20 shadow-sm rounded-xl p-5 relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-1.5 h-full bg-[#048261] dark:bg-discord-accent" />
-                      <div className="flex items-start gap-4 mb-4 px-2">
-                        <div className="w-10 h-10 rounded-full bg-[#e0fbf4] dark:bg-discord-accent/20 text-[#048261] dark:text-discord-accent flex items-center justify-center shrink-0 mt-1">
-                          <Ticket size={20} />
+                  {msg.attachments?.map((attachment, i) =>
+                    attachment.url === 'ticket_draft_confirmation' ? (
+                      <TicketDraftCard
+                        key={`${attachment.name}-${i}`}
+                        attachment={attachment}
+                        isLoading={isLoading}
+                        onCancel={() => handleDismissEscalation(msg.id, i)}
+                        onSubmit={(draft) => void handleConfirmTicketDraft(msg.id, i, draft)}
+                      />
+                    ) : (
+                      <div key={`${attachment.name}-${i}`} className="bg-white dark:bg-discord-sidebar border border-[#a6f4df] dark:border-discord-accent/30 ring-1 ring-brand-mint dark:ring-discord-accent/20 shadow-sm rounded-xl p-5 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#048261] dark:bg-discord-accent" />
+                        <div className="flex items-start gap-4 mb-4 px-2">
+                          <div className="w-10 h-10 rounded-full bg-[#e0fbf4] dark:bg-discord-accent/20 text-[#048261] dark:text-discord-accent flex items-center justify-center shrink-0 mt-1">
+                            <Ticket size={20} />
+                          </div>
+                          <div>
+                            <h4 className="text-[15px] font-bold text-gray-900 dark:text-discord-text leading-tight">
+                              {attachment.url === 'escalation_confirmation_required'
+                                ? 'Cần xác nhận gửi ticket cho HR'
+                                : attachment.name}
+                            </h4>
+                            <p className="text-sm text-gray-600 dark:text-discord-text-muted">Hệ thống đã thực hiện hành động liên quan đến yêu cầu của bạn.</p>
+                            {attachment.url === 'escalation_confirmation_required' && (
+                              <p className="text-sm text-gray-600 dark:text-discord-text-muted mt-2">
+                                Bạn có muốn gửi ticket cho HR để được hỗ trợ tiếp không?
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="text-[15px] font-bold text-gray-900 dark:text-discord-text leading-tight">
-                            {attachment.url === 'escalation_confirmation_required'
-                              ? 'Cần xác nhận gửi ticket cho HR'
-                              : attachment.name}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-discord-text-muted">Hệ thống đã thực hiện hành động liên quan đến yêu cầu của bạn.</p>
-                          {attachment.url === 'escalation_confirmation_required' && (
-                            <p className="text-sm text-gray-600 dark:text-discord-text-muted mt-2">
-                              Bạn có muốn gửi ticket cho HR để được hỗ trợ tiếp không?
-                            </p>
-                          )}
-                        </div>
+                        {attachment.url === 'escalation_created' && (
+                          <div className="flex justify-end border-t border-gray-100 dark:border-discord-bg pt-3">
+                            <button
+                              onClick={() => navigate(user?.role === 'admin' ? '/admin/tickets' : '/tickets')}
+                              className="px-4 py-2 text-sm font-medium bg-brand-blue dark:bg-discord-accent text-white rounded-lg hover:bg-[#051c5e] dark:hover:bg-[#4752C4] transition-colors shadow-sm flex items-center gap-1.5"
+                            >
+                              Xem ticket <Send size={14} />
+                            </button>
+                          </div>
+                        )}
+                        {attachment.url === 'escalation_confirmation_required' && (
+                          <div className="flex justify-end gap-2 border-t border-gray-100 dark:border-discord-bg pt-3">
+                            <button
+                              onClick={() => handleDismissEscalation(msg.id, i)}
+                              className="px-4 py-2 text-sm font-medium bg-white dark:bg-discord-card text-gray-600 dark:text-discord-text border border-gray-200 dark:border-discord-bg rounded-lg hover:bg-gray-50 dark:hover:bg-discord-card-hover transition-colors"
+                            >
+                              Không gửi
+                            </button>
+                            <button
+                              onClick={() => handleConfirmEscalation(msg.id, i, attachment.data)}
+                              className="px-4 py-2 text-sm font-medium bg-brand-blue dark:bg-discord-accent text-white rounded-lg hover:bg-[#051c5e] dark:hover:bg-[#4752C4] transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-60"
+                              disabled={isLoading}
+                            >
+                              Gửi ticket <Send size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      {attachment.url === 'escalation_created' && (
-                        <div className="flex justify-end border-t border-gray-100 dark:border-discord-bg pt-3">
-                          <button
-                            onClick={() => navigate(user?.role === 'admin' ? '/admin/tickets' : '/tickets')}
-                            className="px-4 py-2 text-sm font-medium bg-brand-blue dark:bg-discord-accent text-white rounded-lg hover:bg-[#051c5e] dark:hover:bg-[#4752C4] transition-colors shadow-sm flex items-center gap-1.5"
-                          >
-                            Xem ticket <Send size={14} />
-                          </button>
-                        </div>
-                      )}
-                      {attachment.url === 'escalation_confirmation_required' && (
-                        <div className="flex justify-end gap-2 border-t border-gray-100 dark:border-discord-bg pt-3">
-                          <button
-                            onClick={() => handleDismissEscalation(msg.id, i)}
-                            className="px-4 py-2 text-sm font-medium bg-white dark:bg-discord-card text-gray-600 dark:text-discord-text border border-gray-200 dark:border-discord-bg rounded-lg hover:bg-gray-50 dark:hover:bg-discord-card-hover transition-colors"
-                          >
-                            Không gửi
-                          </button>
-                          <button
-                            onClick={() => handleConfirmEscalation(msg.id, i, attachment.data)}
-                            className="px-4 py-2 text-sm font-medium bg-brand-blue dark:bg-discord-accent text-white rounded-lg hover:bg-[#051c5e] dark:hover:bg-[#4752C4] transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-60"
-                            disabled={isLoading}
-                          >
-                            Gửi ticket <Send size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               </div>
             );
@@ -451,6 +541,140 @@ export function Chat() {
       </div>
     </div>
   );
+}
+
+function TicketDraftCard({
+  attachment,
+  isLoading,
+  onCancel,
+  onSubmit,
+}: {
+  attachment: ChatAttachment;
+  isLoading: boolean;
+  onCancel: () => void;
+  onSubmit: (draft: TicketDraftFormValues) => void;
+}) {
+  const initialDraft = getTicketDraftValues(attachment.data);
+  const [title, setTitle] = useState(initialDraft.title);
+  const [category, setCategory] = useState<TicketCategory>(initialDraft.category);
+  const [description, setDescription] = useState(initialDraft.description);
+  const canSubmit = title.trim().length > 0 && description.trim().length > 0 && !isLoading;
+
+  return (
+    <form
+      className="w-full bg-white dark:bg-discord-sidebar border border-gray-200 dark:border-discord-bg shadow-sm rounded-lg relative overflow-hidden"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!canSubmit) return;
+        onSubmit({
+          title,
+          category,
+          description,
+          reason: initialDraft.reason,
+          priority: initialDraft.priority,
+          sessionId: initialDraft.sessionId,
+        });
+      }}
+    >
+      <div className="absolute top-0 left-0 w-1 h-full bg-brand-blue dark:bg-discord-accent" />
+      <div className="flex items-center gap-3 border-b border-gray-200 dark:border-discord-bg px-5 py-4 pl-6">
+        <div className="w-8 h-8 rounded-full bg-[#e0fbf4] dark:bg-discord-accent/20 text-[#048261] dark:text-discord-accent flex items-center justify-center shrink-0">
+          <Ticket size={17} />
+        </div>
+        <h4 className="text-[15px] font-semibold text-gray-900 dark:text-discord-text leading-tight">
+          Xác nhận yêu cầu hỗ trợ (AI đã điền sẵn)
+        </h4>
+      </div>
+
+      <div className="px-5 py-5 pl-6 space-y-5">
+        <label className="block">
+          <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-2">Tiêu đề</span>
+          <input
+            type="text"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            className="w-full h-11 rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 text-sm text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent"
+          />
+        </label>
+
+        <label className="block">
+          <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-2">Danh mục</span>
+          <select
+            value={category}
+            onChange={(event) => setCategory(toTicketCategory(event.target.value))}
+            className="w-full h-11 rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 text-sm text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent"
+          >
+            {ticketCategories.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-2">Mô tả chi tiết</span>
+          <textarea
+            rows={4}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            className="w-full rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 py-3 text-sm leading-relaxed text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent resize-y min-h-[96px]"
+          />
+        </label>
+      </div>
+
+      <div className="flex items-center justify-end gap-3 bg-gray-50 dark:bg-discord-card/50 border-t border-gray-100 dark:border-discord-bg px-5 py-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-discord-text hover:bg-white dark:hover:bg-discord-card rounded-lg transition-colors"
+        >
+          Hủy
+        </button>
+        <button
+          type="submit"
+          disabled={!canSubmit}
+          className="px-5 py-2.5 text-sm font-semibold bg-brand-blue dark:bg-discord-accent text-white rounded-lg hover:bg-[#051c5e] dark:hover:bg-[#4752C4] transition-colors shadow-sm flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          Gửi yêu cầu <Send size={14} />
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function getTicketDraftValues(data: Record<string, unknown> | null | undefined): TicketDraftFormValues {
+  const payload = data || {};
+  return {
+    title: getString(payload.title),
+    category: toTicketCategory(getString(payload.category)),
+    description: getString(payload.description),
+    reason: getString(payload.reason) || 'user_requested',
+    priority: getString(payload.priority) || 'normal',
+    sessionId: getString(payload.session_id) || null,
+  };
+}
+
+function formatTicketDraftMessage(draft: TicketDraftFormValues): string {
+  return [
+    `Tiêu đề: ${draft.title.trim()}`,
+    `Danh mục: ${ticketCategoryLabel(draft.category)}`,
+    '',
+    'Mô tả:',
+    draft.description.trim(),
+  ].join('\n');
+}
+
+function ticketCategoryLabel(category: TicketCategory): string {
+  return ticketCategories.find((item) => item.value === category)?.label || 'Khác';
+}
+
+function toTicketCategory(value: string): TicketCategory {
+  return ticketCategories.some((item) => item.value === value) ? (value as TicketCategory) : 'other';
+}
+
+function getString(value: unknown): string {
+  return typeof value === 'string' ? value : '';
 }
 
 function MarkdownMessage({ text }: { text: string }) {

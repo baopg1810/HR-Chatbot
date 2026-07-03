@@ -45,9 +45,14 @@ async def check_input_safeguard(text: str, user_context: dict | None = None) -> 
         provider_decision = await OpenAISafeguardClient().check_input(text, user_context=user_context)
     except Exception as exc:
         log_guardrail_error("input", exc)
-        decision = rule_decision if not rule_decision.allowed else _decision_for_guardrail_error("input_safeguard_error")
+        if rule_decision.allowed and is_low_risk_self_service_or_helpdesk(text):
+            decision = rule_decision.model_copy(update={"internal_reason": "provider_error_low_risk_rule_allow"})
+        else:
+            decision = rule_decision if not rule_decision.allowed else _decision_for_guardrail_error("input_safeguard_error")
     else:
         decision = _combine_input_safeguards(rule_decision, provider_decision)
+    if rule_decision.allowed and not decision.allowed and is_low_risk_self_service_or_helpdesk(text):
+        decision = rule_decision.model_copy(update={"internal_reason": "provider_false_positive_low_risk"})
     log_guardrail_decision("input", decision.model_dump())
     return _warn_to_allow(decision)
 
@@ -90,6 +95,12 @@ async def check_topic_scope(text: str) -> TopicScopeDecision:
             )
         else:
             decision = rule_decision
+    if (
+        rule_decision.scope == "in_scope"
+        and decision.scope != "in_scope"
+        and is_low_risk_self_service_or_helpdesk(text)
+    ):
+        decision = rule_decision.model_copy(update={"internal_reason": "provider_false_positive_low_risk"})
     log_guardrail_decision("topic", decision.model_dump())
     return decision
 
@@ -157,7 +168,11 @@ async def check_output_safeguard(
             decision = rule_decision
     else:
         decision = _combine_output_safeguards(rule_decision, provider_decision)
-    if rule_decision.allowed and not decision.allowed and (has_tool_result or topic == "hr_helpdesk_usage"):
+    if rule_decision.allowed and not decision.allowed and (
+        has_tool_result
+        or topic == "hr_helpdesk_usage"
+        or is_low_risk_self_service_or_helpdesk(user_message)
+    ):
         decision = rule_decision.model_copy(update={"internal_reason": "provider_false_positive_low_risk"})
     log_guardrail_decision("output", decision.model_dump())
     return _warn_output_to_allow(decision, text)
@@ -210,6 +225,8 @@ def _combine_input_safeguards(
     provider_decision: InputSafeguardDecision,
 ) -> InputSafeguardDecision:
     if not rule_decision.allowed or rule_decision.blocked:
+        return rule_decision
+    if rule_decision.requires_handoff:
         return rule_decision
     return provider_decision
 

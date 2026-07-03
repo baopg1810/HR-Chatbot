@@ -9,6 +9,7 @@ from app.guardrails.messages import (
     OUT_OF_SCOPE_MESSAGE,
     PROMPT_INJECTION_MESSAGE,
     SENSITIVE_DATA_MESSAGE,
+    WORKPLACE_MISCONDUCT_MESSAGE,
 )
 from app.guardrails.schemas import (
     GuardrailDecision,
@@ -31,6 +32,16 @@ HR_TERMS = {
     "nghi phep",
     "luong",
     "thuong",
+    "cham luong",
+    "tre luong",
+    "thieu luong",
+    "sai luong",
+    "chua nhan luong",
+    "payroll",
+    "salary",
+    "payslip",
+    "deduction",
+    "tax",
     "bao hiem",
     "bhxh",
     "bhyt",
@@ -53,6 +64,20 @@ HR_TERMS = {
     "offboarding",
     "ticket",
     "helpdesk",
+    "khieu nai",
+    "phan anh",
+    "to cao",
+    "quay roi",
+    "bat nat",
+    "tra dua",
+    "phan biet doi xu",
+    "misconduct",
+    "retaliation",
+    "bullying",
+    "discrimination",
+    "workplace complaint",
+    "harassment",
+    "complaint",
 }
 
 JAILBREAK_PATTERNS = [
@@ -101,7 +126,7 @@ THIRD_PARTY_PATTERNS = [
 
 SELF_PATTERNS = [
     r"\b(cua|ve)\s+(toi|minh|em|anh|chi|ban\s+than)\b",
-    r"\b(toi|minh|em)\s+(co|con|duoc|da)\b",
+    r"\b(toi|minh|em)\s+(co|con|duoc|da|bi|gap|chua|khong|can|muon)\b",
     r"\b(my|mine|myself)\b",
 ]
 
@@ -126,10 +151,53 @@ def looks_like_hr_question(message: str) -> bool:
 
 def is_low_risk_self_service_or_helpdesk(message: str) -> bool:
     normalized = _normalize(message)
-    return _is_helpdesk_usage_message(normalized) or _is_self_service_hr_request(normalized)
+    return (
+        _is_helpdesk_usage_message(normalized)
+        or _is_self_service_hr_request(normalized)
+        or _is_workplace_report(normalized)
+        or _is_own_payroll_issue(normalized)
+    )
+
+
+def is_workplace_misconduct_report(message: str) -> bool:
+    return _is_workplace_report(_normalize(message))
 
 
 def rule_input_safeguard(message: str) -> InputSafeguardDecision:
+    normalized = _normalize(message)
+    if _matches_any(normalized, JAILBREAK_PATTERNS):
+        return InputSafeguardDecision(
+            allowed=False,
+            blocked=True,
+            action="block",
+            risk_level="high",
+            user_message=PROMPT_INJECTION_MESSAGE,
+            internal_reason="rule_jailbreak",
+            reason_code="jailbreak",
+        )
+    if _is_workplace_report(normalized):
+        return InputSafeguardDecision(
+            allowed=True,
+            blocked=False,
+            requires_handoff=True,
+            action="handoff",
+            risk_level="medium",
+            user_message=WORKPLACE_MISCONDUCT_MESSAGE,
+            internal_reason="workplace_misconduct_report_requires_confidential_hr_handling",
+            reason_code="workplace_misconduct",
+        )
+    if _is_own_payroll_issue(normalized):
+        return InputSafeguardDecision(
+            allowed=True,
+            blocked=False,
+            requires_handoff=False,
+            action="allow",
+            risk_level="low",
+            user_message="",
+            internal_reason="own_payroll_issue_allow",
+            reason_code="allow",
+        )
+
     decision = _evaluate_rule_guardrails(message)
     if decision.allowed:
         return InputSafeguardDecision(
@@ -153,6 +221,24 @@ def rule_input_safeguard(message: str) -> InputSafeguardDecision:
 
 def rule_topic_scope(message: str) -> TopicScopeDecision:
     normalized = _normalize(message)
+    if _is_workplace_report(normalized):
+        return TopicScopeDecision(
+            scope="in_scope",
+            topic=_workplace_report_topic(normalized),
+            sensitivity="confidential",
+            confidence=0.9,
+            user_message=WORKPLACE_MISCONDUCT_MESSAGE,
+            internal_reason="workplace_misconduct_report_in_scope",
+        )
+    if _is_own_payroll_issue(normalized):
+        return TopicScopeDecision(
+            scope="in_scope",
+            topic=_payroll_issue_topic(normalized),
+            sensitivity="sensitive",
+            confidence=0.9,
+            user_message="Mình có thể hỗ trợ bạn tạo ticket về vấn đề lương.",
+            internal_reason="own_payroll_issue_in_scope",
+        )
     if _is_helpdesk_usage_message(normalized):
         return TopicScopeDecision(
             scope="in_scope",
@@ -401,6 +487,8 @@ def _is_helpdesk_usage_message(normalized: str) -> bool:
             r"\bban\s+co\s+the\s+(giup|ho\s+tro|lam)\b",
             r"\bhelpdesk\b",
             r"\bhuong\s+dan\s+su\s+dung\s+(hr|helpdesk)\b",
+            r"\b(tao|mo|gui|lap)\s+(ticket|phieu|yeu\s+cau)\b",
+            r"\b(ticket|phieu\s+ho\s+tro|yeu\s+cau\s+ho\s+tro)\b",
         )
     )
 
@@ -419,21 +507,81 @@ def _is_self_service_hr_request(normalized: str) -> bool:
             "bhyt",
             "hop dong",
             "thuong",
+            "cham luong",
+            "tre luong",
+            "thieu luong",
+            "sai luong",
+            "chua nhan luong",
+            "payroll",
+            "salary",
+            "payslip",
             "khen thuong",
             "trang thai",
             "con lai",
+            "ticket",
+            "yeu cau",
+            "khieu nai",
+            "phan anh",
+            "to cao",
+            "quay roi",
         }
     )
     return has_self_reference and has_hr_self_service_term
 
 
+def _is_own_payroll_issue(normalized: str) -> bool:
+    has_payroll_issue = _matches_any(
+        normalized,
+        [
+            r"\b(cham\s+luong|tre\s+luong|chua\s+nhan\s+luong|thieu\s+luong|sai\s+luong)\b",
+            r"\b(luong\s+thang|luong\s+thang\s+13|bang\s+luong|payslip)\b",
+            r"\b(payroll\s+issue|salary\s+delay|salary\s+missing|tax\s+deduction|insurance\s+deduction)\b",
+        ],
+    )
+    if not has_payroll_issue:
+        return False
+    return _matches_any(normalized, SELF_PATTERNS) or not _is_third_party_sensitive_request(normalized)
+
+
+def _payroll_issue_topic(normalized: str) -> str:
+    if _matches_any(normalized, [r"\b(cham\s+luong|tre\s+luong|chua\s+nhan\s+luong|salary\s+delay|salary\s+missing)\b"]):
+        return "payroll_delay_ticket"
+    if _matches_any(normalized, [r"\b(thieu\s+luong|sai\s+luong|payroll\s+issue)\b"]):
+        return "payroll_issue"
+    return "payroll_issue"
+
+
+def _is_workplace_report(normalized: str) -> bool:
+    has_report_term = _matches_any(
+        normalized,
+        [
+            r"\b(khieu\s+nai|phan\s+anh|to\s+cao|complaint|report)\b",
+            r"\b(quay\s+roi|harassment|bat\s+nat|bullying|ky\s+thi|discrimination|phan\s+biet\s+doi\s+xu|tra\s+dua|retaliation|misconduct)\b",
+        ],
+    )
+    has_workplace_context = _matches_any(normalized, [r"\b(cong\s+ty|noi\s+bo|noi\s+lam\s+viec|workplace|hr|nhan\s+su)\b"])
+    return has_report_term and has_workplace_context
+
+
+def _workplace_report_topic(normalized: str) -> str:
+    if _matches_any(normalized, [r"\b(quay\s+roi|harassment)\b"]):
+        return "workplace_harassment_complaint"
+    if _matches_any(normalized, [r"\b(bat\s+nat|bullying)\b"]):
+        return "bullying_complaint"
+    if _matches_any(normalized, [r"\b(ky\s+thi|discrimination|phan\s+biet\s+doi\s+xu)\b"]):
+        return "discrimination_complaint"
+    if _matches_any(normalized, [r"\b(tra\s+dua|retaliation)\b"]):
+        return "retaliation_complaint"
+    return "workplace_misconduct"
+
+
 def _infer_topic(normalized: str) -> str:
     for topic, terms in {
         "leave_policy": {"nghi", "phep", "thai san", "nghi om"},
-        "payroll": {"luong", "thuong", "payroll", "thue"},
+        "payroll_issue": {"luong", "thuong", "payroll", "thue", "payslip", "cham luong", "tre luong"},
         "insurance": {"bao hiem", "bhxh", "bhyt"},
         "contract": {"hop dong", "thu viec"},
-        "ticket": {"ticket", "yeu cau", "helpdesk"},
+        "ticket": {"ticket", "yeu cau", "helpdesk", "khieu nai", "phan anh", "to cao", "quay roi"},
         "benefits": {"phuc loi", "quyen loi"},
     }.items():
         if any(term in normalized for term in terms):

@@ -22,6 +22,9 @@ class AgentState(TypedDict, total=False):
     session_id: str
     message_id: str
     conversation_context: str
+    latest_user_message: str
+    session_state: dict
+    runtime_context: dict
     db: Any
     guardrail: Any
     input_safeguard: dict

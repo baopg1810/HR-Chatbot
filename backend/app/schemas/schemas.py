@@ -60,7 +60,13 @@ class Citation(BaseModel):
 
 
 class ChatAction(BaseModel):
-    type: Literal["hr_metric_lookup", "escalation_confirmation_required", "escalation_created", "none"]
+    type: Literal[
+        "hr_metric_lookup",
+        "ticket_draft_confirmation",
+        "escalation_confirmation_required",
+        "escalation_created",
+        "none",
+    ]
     label: str
     data: dict[str, Any] | None = None
 
@@ -110,6 +116,8 @@ RewardReviewStatus = Literal["not_started", "in_review", "approved", "rejected"]
 TicketStatus = Literal["open", "in_progress", "resolved", "rejected"]
 TicketPriority = Literal["low", "normal", "high"]
 EscalationReason = Literal["no_source", "outside_scope", "sensitive", "user_requested", "low_confidence"]
+TicketDraftCategory = Literal["leave", "benefits", "equipment", "documents", "other"]
+ActiveFlow = Literal["none", "ticket_draft"]
 
 
 class PersonalHrMetrics(BaseModel):
@@ -125,6 +133,24 @@ class EscalationCreate(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000)
     reason: EscalationReason
     priority: TicketPriority = "normal"
+
+
+class PendingTicketDraft(BaseModel):
+    title: str | None = None
+    category: TicketDraftCategory | None = None
+    description: str | None = None
+    priority: TicketPriority = "normal"
+    missing_fields: list[str] = Field(default_factory=list)
+    session_id: str | None = None
+
+
+class ChatWorkflowState(BaseModel):
+    active_flow: ActiveFlow = "none"
+    pending_ticket_draft: PendingTicketDraft | None = None
+    last_intent: str | None = None
+    conversation_summary: str | None = None
+    conversation_summary_message_count: int = 0
+    conversation_summary_updated_at: str | None = None
 
 
 class Ticket(BaseModel):

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.schemas.schemas import EscalationCreate, Ticket, TicketListResponse, TicketUpdate, TicketStatus, TicketPriority
 from app.api.deps import get_current_user
 from app.models.user import User
+from app.services.chat_session_state import clear_chat_session_state
 from app.services.tickets import create_ticket, list_tickets, update_ticket
 
 router = APIRouter()
@@ -15,7 +16,10 @@ async def create_escalation(
     request: EscalationCreate,
     current_user: User = Depends(get_current_user),
 ) -> Ticket:
-    return await create_ticket(current_user, request)
+    ticket = await create_ticket(current_user, request)
+    if request.session_id:
+        await clear_chat_session_state(None, request.session_id)
+    return ticket
 
 @router.get("/tickets", response_model=TicketListResponse)
 async def my_tickets(
