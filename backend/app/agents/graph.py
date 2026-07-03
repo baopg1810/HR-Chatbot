@@ -5,28 +5,37 @@ from app.agents.nodes.example_node import (
     classify_intent_node,
     finalize_response_node,
     general_answer_node,
-    guardrail_node,
     handle_no_source_node,
     handle_ticket_intent_node,
     hr_metrics_node,
+    input_safeguard_node,
     is_blocked,
+    output_safeguard_node,
     retrieve_policy_node,
     route_intent,
     route_retrieval,
+    topic_scope_node,
 )
 from app.agents.state import AgentState
 
 
-def route_after_guardrail(state: AgentState) -> str:
+def route_after_input_safeguard(state: AgentState) -> str:
     if is_blocked(state):
-        return "finalize_response"
+        return "output_safeguard"
+    return "topic_scope"
+
+
+def route_after_topic_scope(state: AgentState) -> str:
+    if is_blocked(state):
+        return "output_safeguard"
     return "classify_intent"
 
 
 def build_graph():
     graph = StateGraph(AgentState)
 
-    graph.add_node("guardrail", guardrail_node)
+    graph.add_node("input_safeguard", input_safeguard_node)
+    graph.add_node("topic_scope", topic_scope_node)
     graph.add_node("classify_intent", classify_intent_node)
     graph.add_node("hr_metrics", hr_metrics_node)
     graph.add_node("retrieve_policy", retrieve_policy_node)
@@ -34,15 +43,24 @@ def build_graph():
     graph.add_node("handle_no_source", handle_no_source_node)
     graph.add_node("handle_ticket_intent", handle_ticket_intent_node)
     graph.add_node("general_answer", general_answer_node)
+    graph.add_node("output_safeguard", output_safeguard_node)
     graph.add_node("finalize_response", finalize_response_node)
 
-    graph.set_entry_point("guardrail")
+    graph.set_entry_point("input_safeguard")
     graph.add_conditional_edges(
-        "guardrail",
-        route_after_guardrail,
+        "input_safeguard",
+        route_after_input_safeguard,
+        {
+            "topic_scope": "topic_scope",
+            "output_safeguard": "output_safeguard",
+        },
+    )
+    graph.add_conditional_edges(
+        "topic_scope",
+        route_after_topic_scope,
         {
             "classify_intent": "classify_intent",
-            "finalize_response": "finalize_response",
+            "output_safeguard": "output_safeguard",
         },
     )
     graph.add_conditional_edges(
@@ -73,7 +91,8 @@ def build_graph():
         "handle_ticket_intent",
         "general_answer",
     ):
-        graph.add_edge(node, "finalize_response")
+        graph.add_edge(node, "output_safeguard")
+    graph.add_edge("output_safeguard", "finalize_response")
     graph.add_edge("finalize_response", END)
 
     return graph.compile()

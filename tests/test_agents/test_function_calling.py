@@ -51,9 +51,90 @@ async def test_classifier_calls_hris_tool_only_for_personal_metric_questions():
     insurance_policy = await classify_intent_node({"query": "Muc dong bao hiem xa hoi cua EIV va nhan vien la bao nhieu?"})
     leave_policy = await classify_intent_node({"query": "Nhan vien lam du 12 thang duoc bao nhieu ngay phep co huong luong?"})
 
-    assert personal == {"intent": "hr_metric", "requested_tool": "hris"}
-    assert insurance_policy == {"intent": "policy_question"}
-    assert leave_policy == {"intent": "policy_question"}
+    assert personal["intent"] == "hr_metric"
+    assert personal["requested_tool"] == "hris"
+    assert personal["metadata"]["tool_choice_source"] == "fallback_rule"
+    assert insurance_policy["intent"] == "policy_question"
+    assert insurance_policy["metadata"]["tool_choice_source"] == "fallback_rule"
+    assert leave_policy["intent"] == "policy_question"
+    assert leave_policy["metadata"]["tool_choice_source"] == "fallback_rule"
+
+
+@pytest.mark.asyncio
+async def test_model_tool_choice_can_select_hr_metrics(monkeypatch):
+    monkeypatch.setattr(
+        "app.agents.tool_choice.llm.choose_chat_tool_with_gemini",
+        lambda *args, **kwargs: {"name": "get_hr_metrics", "args": {"query": "hello"}},
+    )
+
+    result = await classify_intent_node({"query": "hello"})
+
+    assert result["intent"] == "hr_metric"
+    assert result["requested_tool"] == "hris"
+    assert result["metadata"]["tool_choice_source"] == "model"
+    assert result["metadata"]["tool_choice_name"] == "get_hr_metrics"
+
+
+@pytest.mark.asyncio
+async def test_model_tool_choice_can_select_policy_search(monkeypatch):
+    monkeypatch.setattr(
+        "app.agents.tool_choice.llm.choose_chat_tool_with_gemini",
+        lambda *args, **kwargs: {"name": "search_policy", "args": {"query": "nghi phep"}},
+    )
+
+    result = await classify_intent_node({"query": "hello"})
+
+    assert result["intent"] == "policy_question"
+    assert result["metadata"]["tool_choice_source"] == "model"
+    assert result["metadata"]["tool_choice_name"] == "search_policy"
+
+
+@pytest.mark.asyncio
+async def test_model_tool_choice_can_select_general_answer(monkeypatch):
+    monkeypatch.setattr(
+        "app.agents.tool_choice.llm.choose_chat_tool_with_gemini",
+        lambda *args, **kwargs: {"name": "answer_general", "args": {"query": "hello"}},
+    )
+
+    result = await classify_intent_node({"query": "Toi con bao nhieu ngay phep?"})
+
+    assert result["intent"] == "general"
+    assert result["metadata"]["tool_choice_source"] == "model"
+    assert result["metadata"]["tool_choice_name"] == "answer_general"
+
+
+@pytest.mark.asyncio
+async def test_model_tool_choice_can_select_ticket_confirmation(client, monkeypatch):
+    monkeypatch.setattr(
+        "app.agents.tool_choice.llm.choose_chat_tool_with_gemini",
+        lambda *args, **kwargs: {"name": "request_ticket_escalation", "args": {"message": "hello"}},
+    )
+    token = await _token(client, "employee@example.com", "employee123")
+
+    response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "Tao ticket giup toi ve viec hop dong thu viec chua duoc phan hoi", "session_id": None},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["actions"][0]["type"] == "escalation_confirmation_required"
+    assert data["escalated_ticket_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_invalid_model_tool_choice_falls_back_to_rules(monkeypatch):
+    monkeypatch.setattr(
+        "app.agents.tool_choice.llm.choose_chat_tool_with_gemini",
+        lambda *args, **kwargs: {"name": "delete_payroll", "args": {}},
+    )
+
+    result = await classify_intent_node({"query": "Toi con bao nhieu ngay phep?"})
+
+    assert result["intent"] == "hr_metric"
+    assert result["metadata"]["tool_choice_source"] == "fallback_rule"
+    assert result["metadata"]["tool_choice_fallback_reason"] == "model_unavailable_or_invalid"
 
 
 @pytest.mark.asyncio

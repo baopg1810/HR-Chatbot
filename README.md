@@ -104,6 +104,18 @@ Frontend mặc định gọi API tại `http://localhost:8000/api/v1` khi chạy
 VITE_API_BASE_URL=http://localhost:8000/api/v1
 ```
 
+## Chuẩn bị dữ liệu lần đầu
+
+Khi chạy sản phẩm lần đầu, kho tri thức chưa có tài liệu nên chatbot có thể trả lời rằng chưa tìm thấy nguồn HR phù hợp. Trước khi demo hoặc kiểm thử luồng hỏi đáp, hãy upload file sổ tay nhân viên có sẵn trong repo:
+
+- File cần upload trước: [So_tay_nhan_vien.md](So_tay_nhan_vien.md)
+- Tài khoản thực hiện: HR Admin `admin@example.com` / `admin123`
+- Vị trí trong UI: đăng nhập HR Admin, mở menu **Kho tri thức**, chọn **Upload file chính sách**.
+- Tên hiển thị gợi ý: `Sổ tay nhân viên`.
+- Sau khi chọn file, bấm **Lập chỉ mục file upload** và đợi thông báo lập chỉ mục thành công.
+
+Ứng dụng hỗ trợ upload tài liệu chính sách dạng `.docx`, `.md`, `.txt`. Sau khi `So_tay_nhan_vien.md` đã được index, đăng nhập bằng tài khoản Employee để hỏi các câu về thử việc, nghỉ phép, phúc lợi, kỷ luật, nội quy hoặc quy tắc ứng xử và kiểm tra citations trong câu trả lời.
+
 ## Tài khoản demo
 
 Local development tự seed hai tài khoản sau:
@@ -116,9 +128,9 @@ Local development tự seed hai tài khoản sau:
 Gợi ý demo nhanh:
 
 1. Đăng nhập bằng tài khoản HR Admin.
-2. Upload tài liệu chính sách HR hoặc dùng flow thêm tài liệu mẫu trong UI.
+2. Vào **Kho tri thức** và upload trước [So_tay_nhan_vien.md](So_tay_nhan_vien.md).
 3. Đăng nhập bằng tài khoản Employee.
-4. Hỏi: `Chính sách nghỉ phép năm nay như thế nào?`
+4. Hỏi: `Nhân viên thử việc trong bao lâu?` hoặc `Chính sách nghỉ phép được quy định như thế nào?`
 5. Kiểm tra câu trả lời có citations.
 6. Hỏi một câu nhạy cảm hoặc ngoài phạm vi để thấy luồng xác nhận tạo ticket.
 7. Đăng nhập HR Admin để xem/cập nhật ticket và chạy trending detection.

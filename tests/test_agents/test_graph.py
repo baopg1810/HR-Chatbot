@@ -31,6 +31,45 @@ async def test_agent_basic_flow():
 
 
 @pytest.mark.asyncio
+async def test_agent_capability_question_uses_static_helpdesk_answer():
+    result = await agent.ainvoke(
+        {
+            "query": "Bạn có thể hỗ trợ gì về HR?",
+            "current_user": DEMO_USERS["employee@example.com"],
+            "session_id": "session-capability",
+            "message_id": "msg-capability",
+        }
+    )
+
+    response = result["response"]
+    assert response.refusal_reason is None
+    assert "Mình có thể hỗ trợ" in response.answer
+    assert "nội dung không được phép hiển thị" not in response.answer
+
+
+@pytest.mark.asyncio
+async def test_bare_numeric_reply_without_pending_choice_asks_for_clarification():
+    result = await agent.ainvoke(
+        {
+            "query": "3",
+            "current_user": DEMO_USERS["employee@example.com"],
+            "session_id": "session-bare-number",
+            "message_id": "msg-bare-number",
+            "conversation_context": (
+                "3 lượt hỏi đáp gần nhất:\n"
+                "[1] Người dùng: Bạn có thể hỗ trợ gì về HR?\n"
+                "[1] AI: Mình có thể hỗ trợ các câu hỏi liên quan đến nhân sự."
+            ),
+        }
+    )
+
+    response = result["response"]
+    assert response.refusal_reason is None
+    assert response.answer != "3"
+    assert "nhập rõ câu hỏi HR" in response.answer
+
+
+@pytest.mark.asyncio
 async def test_agent_state_structure():
     result = await agent.ainvoke({"query": "Test query"})
     assert isinstance(result, dict)

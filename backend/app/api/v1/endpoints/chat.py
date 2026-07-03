@@ -16,8 +16,10 @@ from app.agents.nodes.example_node import (
     handle_no_source_node,
     handle_ticket_intent_node,
     hr_metrics_node,
+    output_safeguard_node,
     retrieve_policy_node,
     route_retrieval,
+    topic_scope_node,
 )
 from app.schemas.schemas import ChatRequest, ChatResponse
 from app.models.schemas import ChatAction
@@ -209,7 +211,15 @@ async def _stream_chat_answer_chunks(
 
     state.update(await guardrail_node(state))
     if state.get("intent") == "blocked":
-        response = _response_from_state(state, message_id=message_id, session_id=session_id)
+        response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
+        async for chunk in _stream_finished_answer_chunks(response):
+            yield chunk
+        yield {"response": response}
+        return
+
+    state.update(await topic_scope_node(state))
+    if state.get("intent") == "blocked":
+        response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
         async for chunk in _stream_finished_answer_chunks(response):
             yield chunk
         yield {"response": response}
@@ -219,7 +229,7 @@ async def _stream_chat_answer_chunks(
     intent = state.get("intent", "general")
     if intent == "hr_metric":
         state.update(await hr_metrics_node(state))
-        response = _response_from_state(state, message_id=message_id, session_id=session_id)
+        response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
         async for chunk in _stream_finished_answer_chunks(response):
             yield chunk
         yield {"response": response}
@@ -227,7 +237,7 @@ async def _stream_chat_answer_chunks(
 
     if intent == "ticket_create":
         state.update(await handle_ticket_intent_node(state))
-        response = _response_from_state(state, message_id=message_id, session_id=session_id)
+        response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
         async for chunk in _stream_finished_answer_chunks(response):
             yield chunk
         yield {"response": response}
@@ -241,21 +251,16 @@ async def _stream_chat_answer_chunks(
             answer = ""
             for token in stream_cited_answer(request.message, citations, conversation_context=conversation_context):
                 answer += token
-                yield {"text": token}
                 await asyncio.sleep(0)
-            yield {
-                "response": ChatResponse(
-                    message_id=message_id,
-                    session_id=session_id,
-                    answer=answer,
-                    citations=citations,
-                    actions=[_no_action()],
-                )
-            }
+            state.update({"answer": answer, "citations": citations, "actions": [_no_action()]})
+            response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
+            async for chunk in _stream_finished_answer_chunks(response):
+                yield chunk
+            yield {"response": response}
             return
         if route == "handle_no_source":
             state.update(await handle_no_source_node(state))
-            response = _response_from_state(state, message_id=message_id, session_id=session_id)
+            response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
             async for chunk in _stream_finished_answer_chunks(response):
                 yield chunk
             yield {"response": response}
@@ -265,17 +270,17 @@ async def _stream_chat_answer_chunks(
     answer = ""
     for token in stream_general_answer(request.message, user_name, conversation_context=conversation_context):
         answer += token
-        yield {"text": token}
         await asyncio.sleep(0)
-    yield {
-        "response": ChatResponse(
-            message_id=message_id,
-            session_id=session_id,
-            answer=answer,
-            citations=[],
-            actions=[_no_action()],
-        )
-    }
+    state.update({"answer": answer, "citations": [], "actions": [_no_action()]})
+    response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
+    async for chunk in _stream_finished_answer_chunks(response):
+        yield chunk
+    yield {"response": response}
+
+
+async def _response_from_state_with_output_guardrail(state: dict, *, message_id: str, session_id: str) -> ChatResponse:
+    state.update(await output_safeguard_node(state))
+    return _response_from_state(state, message_id=message_id, session_id=session_id)
 
 
 def _response_from_state(state: dict, *, message_id: str, session_id: str) -> ChatResponse:

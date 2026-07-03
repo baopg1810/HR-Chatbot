@@ -1,4 +1,4 @@
-# ---- Stage 1: Python dependencies ----
+# ---- Stage 1: Build ----
 FROM python:3.11-slim AS builder
 
 WORKDIR /app
@@ -22,27 +22,24 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy installed Python packages from builder
+# Copy installed packages from builder
 COPY --from=builder /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH
 
-# Copy application source code
-COPY backend/ ./backend/
-COPY alembic/ ./alembic/
-COPY alembic.ini ./
+# Security: run as non-root user
+RUN useradd -m appuser
 
-# Copy frontend build output
-COPY --from=frontend_builder /app/frontend/dist ./frontend/dist
+# Copy application code
+COPY . .
+COPY --from=frontend_builder /app/frontend/dist /app/frontend/dist
 
-# Create data directory for ChromaDB persistence
-RUN mkdir -p /app/data
+# Create data directory with correct ownership
+RUN mkdir -p /app/data && chown -R appuser:appuser /app
 
-# Railway injects PORT env var; default to 8000 for local dev
-ENV PORT=8000
+USER appuser
+
+EXPOSE 8000
+
 ENV PYTHONPATH=/app/backend:$PYTHONPATH
-ENV PYTHONUNBUFFERED=1
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
 
-EXPOSE ${PORT}
-
-# Use shell form so $PORT is expanded at runtime
-CMD sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"

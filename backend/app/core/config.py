@@ -33,7 +33,28 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("MODEL_NAME", "DEFAULT_MODEL"),
     )
     embedding_model_name: str = "gemini-embedding-2"
-    llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    llm_temperature: float = Field(default=0.2, ge=0.0, le=2.0)
+
+    # Guardrails
+    guardrails_enabled: bool = True
+    guardrails_mode: Literal["off", "warn", "block"] = "block"
+    guardrails_fail_closed: bool = True
+    safeguard_provider: Literal["openai", "groq"] = "groq"
+    groq_api_key: str = ""
+    groq_api_keys: str = ""
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    groq_safeguard_model: str = "openai/gpt-oss-safeguard-20b"
+    openai_safeguard_enabled: bool = True
+    openai_moderation_model: str = "omni-moderation-latest"
+    openai_safeguard_model: str = "gpt-5-mini"
+    topic_classifier_enabled: bool = True
+    topic_classifier_provider: Literal["gemma", "rules"] = "gemma"
+    topic_classifier_model: str = "gemma-4-12b-it"
+    topic_classifier_confidence_threshold: float = Field(default=0.75, ge=0.0, le=1.0)
+    output_guardrail_enabled: bool = True
+    tool_guardrail_enabled: bool = True
+    guardrail_log_decisions: bool = True
+    guardrail_log_raw_text: bool = False
 
     # Database
     database_url: str = "sqlite+aiosqlite:///./data/app.db"

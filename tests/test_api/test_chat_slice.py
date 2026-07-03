@@ -132,21 +132,21 @@ async def test_chat_prompt_includes_saved_history_for_same_session(client, monke
 
     first_response = await client.post(
         "/api/v1/chat",
-        json={"message": "History prompt question one", "session_id": session_id},
+        json={"message": "Bạn có thể hỗ trợ gì về HR?", "session_id": session_id},
         headers={"Authorization": f"Bearer {token}"},
     )
     second_response = await client.post(
         "/api/v1/chat",
-        json={"message": "History prompt question two", "session_id": session_id},
+        json={"message": "Bạn hỗ trợ quy trình HR nào?", "session_id": session_id},
         headers={"Authorization": f"Bearer {token}"},
     )
 
     assert first_response.status_code == 200
     assert second_response.status_code == 200
     assert "LỊCH SỬ HỘI THOẠI" in captured_prompts[-1]
-    assert "History prompt question one" in captured_prompts[-1]
-    assert "answer 1" in captured_prompts[-1]
-    assert "Câu hỏi: History prompt question two" in captured_prompts[-1]
+    assert "Bạn có thể hỗ trợ gì về HR?" in captured_prompts[-1]
+    assert "Mình có thể hỗ trợ các câu hỏi liên quan đến nhân sự" in captured_prompts[-1]
+    assert "Bạn hỗ trợ quy trình HR nào?" in captured_prompts[-1]
 
 
 @pytest.mark.asyncio
@@ -170,7 +170,7 @@ async def test_chat_stream_returns_sse_events(client):
 
 
 @pytest.mark.asyncio
-async def test_chat_stream_sends_live_llm_tokens_before_done(client, monkeypatch):
+async def test_chat_stream_sends_guarded_answer_tokens_before_done(client, monkeypatch):
     from app.api.v1.endpoints import chat as chat_endpoint
 
     monkeypatch.setattr(chat_endpoint, "stream_general_answer", lambda *args, **kwargs: iter(["A", "B"]))
@@ -184,8 +184,7 @@ async def test_chat_stream_sends_live_llm_tokens_before_done(client, monkeypatch
 
     assert response.status_code == 200
     body = response.text
-    first_token_index = body.index('event: token\ndata: {"text": "A"}')
-    second_token_index = body.index('event: token\ndata: {"text": "B"}')
+    token_index = body.index('event: token\ndata: {"text": "AB"}')
     done_index = body.index("event: done")
-    assert first_token_index < second_token_index < done_index
+    assert token_index < done_index
     assert '"answer": "AB"' in body

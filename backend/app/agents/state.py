@@ -24,6 +24,12 @@ class AgentState(TypedDict, total=False):
     conversation_context: str
     db: Any
     guardrail: Any
+    input_safeguard: dict
+    topic_scope: dict
+    output_safeguard: dict
+    tool_guardrails: list[dict]
+    guardrail_blocked: bool
+    guardrail_user_message: str
     intent: ChatIntent
     requested_tool: RequestedTool
     citations: list[Citation]

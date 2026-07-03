@@ -4,6 +4,7 @@ import operator
 from langchain_core.tools import tool
 
 from app.models.schemas import EscalationCreate, TicketPriority
+from app.services.guardrails import check_tool_guardrail
 from app.services.hris import get_personal_hr_metrics
 from app.services.retrieval import search_policy_chunks
 from app.services.tickets import create_ticket
@@ -55,6 +56,9 @@ async def create_ticket_tool(
     db=None,
 ):
     """Create an HR escalation ticket using the existing ticket service."""
+    guardrail = await check_tool_guardrail("create_hr_ticket", user, side_effect=True)
+    if not guardrail.allowed:
+        raise PermissionError(guardrail.user_message)
     return await create_ticket(
         user,
         EscalationCreate(
