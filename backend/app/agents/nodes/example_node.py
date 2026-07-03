@@ -160,11 +160,7 @@ async def hr_metrics_node(state: AgentState) -> dict:
 
     metrics = get_hr_metrics_tool(user)
     return {
-        "answer": (
-            f"Số ngày phép còn lại của bạn là {metrics.leave_days_remaining}. "
-            f"Trạng thái bảo hiểm: {_display_label(metrics.insurance_status)}. "
-            f"Xét duyệt khen thưởng: {_display_label(metrics.reward_review_status)}."
-        ),
+        "answer": _format_hr_metrics_answer(state.get("query", ""), metrics),
         "actions": [
             ChatAction(
                 type="hr_metric_lookup",
@@ -511,3 +507,27 @@ def _display_label(value: str) -> str:
         "rejected": "Từ chối",
     }
     return labels.get(value, value)
+
+
+def _format_hr_metrics_answer(query: str, metrics) -> str:
+    fields = _requested_hr_metric_fields(query) or ["leave", "insurance", "reward"]
+    parts: list[str] = []
+    if "leave" in fields:
+        parts.append(f"Số ngày phép còn lại của bạn là {metrics.leave_days_remaining}.")
+    if "insurance" in fields:
+        parts.append(f"Trạng thái bảo hiểm của bạn là {_display_label(metrics.insurance_status)}.")
+    if "reward" in fields:
+        parts.append(f"Xét duyệt khen thưởng của bạn là {_display_label(metrics.reward_review_status)}.")
+    return " ".join(parts)
+
+
+def _requested_hr_metric_fields(query: str) -> list[str]:
+    normalized = _normalize(query)
+    fields: list[str] = []
+    if re.search(r"\b(ngay\s+phep|nghi\s+phep|phep\s+nam|leave)\b", normalized):
+        fields.append("leave")
+    if re.search(r"\b(bao\s+hiem|insurance)\b", normalized):
+        fields.append("insurance")
+    if re.search(r"\b(khen\s+thuong|xet\s+duyet|reward|review)\b", normalized):
+        fields.append("reward")
+    return fields

@@ -75,12 +75,12 @@ export function Chat() {
       setMessages(
         history.length > 0
           ? history.map((message) => ({
-              id: message.id,
-              sender: message.sender,
-              text: message.text,
-              timestamp: message.timestamp || new Date().toISOString(),
-              citations: message.citations,
-            }))
+            id: message.id,
+            sender: message.sender,
+            text: message.text,
+            timestamp: message.timestamp || new Date().toISOString(),
+            citations: message.citations,
+          }))
           : [newWelcomeMessage()],
       );
       setIsSidebarOpen(false);
@@ -134,13 +134,13 @@ export function Chat() {
             prev.map((message) =>
               message.id === response.message_id
                 ? {
-                    ...message,
-                    text: response.answer,
-                    citations: response.citations,
-                    attachments: response.actions
-                      .filter((action) => action.type !== 'none')
-                      .map((action) => ({ name: action.label, url: action.type, data: action.data })),
-                  }
+                  ...message,
+                  text: response.answer,
+                  citations: response.citations,
+                  attachments: response.actions
+                    .filter((action) => !['none', 'hr_metric_lookup'].includes(action.type))
+                    .map((action) => ({ name: action.label, url: action.type, data: action.data })),
+                }
                 : message,
             ),
           );
@@ -196,17 +196,17 @@ export function Chat() {
         prev.map((message) =>
           message.id === messageId
             ? {
-                ...message,
-                attachments: message.attachments?.map((attachment, index) =>
-                  index === attachmentIndex
-                    ? {
-                        name: `Đã tạo ticket ${ticket.id}`,
-                        url: 'escalation_created',
-                        data: { ticket_id: ticket.id, status: ticket.status },
-                      }
-                    : attachment,
-                ),
-              }
+              ...message,
+              attachments: message.attachments?.map((attachment, index) =>
+                index === attachmentIndex
+                  ? {
+                    name: `Đã tạo ticket ${ticket.id}`,
+                    url: 'escalation_created',
+                    data: { ticket_id: ticket.id, status: ticket.status },
+                  }
+                  : attachment,
+              ),
+            }
             : message,
         ),
       );
@@ -231,9 +231,9 @@ export function Chat() {
       prev.map((message) =>
         message.id === messageId
           ? {
-              ...message,
-              attachments: message.attachments?.filter((_, index) => index !== attachmentIndex),
-            }
+            ...message,
+            attachments: message.attachments?.filter((_, index) => index !== attachmentIndex),
+          }
           : message,
       ),
     );
