@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # LLM
     openai_api_key: str = ""
     cohere_api_key: str = ""
+    cohere_api_key_1: str = ""
+    cohere_api_key_2: str = ""
+    cohere_api_key_3: str = ""
     cohere_rerank_model: str = "rerank-v4.0-pro"
     cohere_rerank_candidate_limit: int = Field(default=40, ge=1, le=1000)
     cohere_rerank_max_tokens_per_doc: int = Field(default=2048, ge=128, le=4096)
@@ -85,8 +88,8 @@ class Settings(BaseSettings):
             raise ValueError("JWT_SECRET_KEY must be set to a strong value in production.")
         if "*" in self.cors_origins:
             raise ValueError("CORS_ORIGINS must be an explicit allowlist in production.")
-        if not self.cohere_api_key:
-            raise ValueError("COHERE_API_KEY must be configured in production.")
+        if not (self.cohere_api_key or self.cohere_api_key_1 or self.cohere_api_key_2 or self.cohere_api_key_3):
+            raise ValueError("COHERE_API_KEY or COHERE_API_KEY_1 must be configured in production.")
         if not (self.google_api_key or self.google_api_keys):
             raise ValueError("At least one Gemini API key must be configured in production.")
         return self

@@ -39,7 +39,7 @@ Các chức năng chính:
 - Git
 - Docker và Docker Compose nếu chạy bằng container
 - Gemini API key nếu muốn dùng model thật: `GOOGLE_API_KEY` hoặc `GOOGLE_API_KEYS`
-- Cohere API key cho rerank: `COHERE_API_KEY`
+- Cohere API key cho rerank: `COHERE_API_KEY` hoặc `COHERE_API_KEY_1`/`COHERE_API_KEY_2`/`COHERE_API_KEY_3`
 - Groq/OpenAI key nếu muốn dùng safeguard provider ngoài rule-based fallback: `GROQ_API_KEY`/`GROQ_API_KEYS` hoặc `OPENAI_API_KEY` khi dùng `SAFEGUARD_PROVIDER=openai`
 
 ## Cài đặt local
@@ -71,7 +71,7 @@ Các biến môi trường quan trọng nằm trong `.env`:
 | `GOOGLE_API_KEY` / `GOOGLE_API_KEYS` | Gemini API key cho generation, embeddings, tool choice và topic classifier |
 | `MODEL_NAME` | Model Gemini dùng để sinh câu trả lời |
 | `EMBEDDING_MODEL_NAME` | Model embedding |
-| `COHERE_API_KEY` | API key cho rerank |
+| `COHERE_API_KEY` / `COHERE_API_KEY_1..3` | API key cho rerank; khi có nhiều key hệ thống sẽ xoay vòng và retry key kế tiếp nếu một key lỗi |
 | `ONLINE_LLM_TESTS` | `1` mặc định: pytest gọi provider thật; đặt `0` khi cần debug offline deterministic fallback |
 | `SAFEGUARD_PROVIDER` | `groq` mặc định hoặc `openai` |
 | `GROQ_API_KEY` / `OPENAI_API_KEY` | API key cho safeguard provider tương ứng |
@@ -174,7 +174,7 @@ $env:PYTHONPATH="backend"
 .\.venv\Scripts\python.exe -m ruff check backend/app tests
 ```
 
-Pytest mặc định bật `ONLINE_LLM_TESTS=1`, nên cần có key thật trong `.env`: `GOOGLE_API_KEY` hoặc `GOOGLE_API_KEYS`, `COHERE_API_KEY`, và guardrail key tương ứng với `SAFEGUARD_PROVIDER`. Chỉ đặt `ONLINE_LLM_TESTS=0` khi muốn debug offline deterministic fallback.
+Pytest mặc định bật `ONLINE_LLM_TESTS=1`, nên cần có key thật trong `.env`: `GOOGLE_API_KEY` hoặc `GOOGLE_API_KEYS`, `COHERE_API_KEY` hoặc `COHERE_API_KEY_1`, và guardrail key tương ứng với `SAFEGUARD_PROVIDER`. Chỉ đặt `ONLINE_LLM_TESTS=0` khi muốn debug offline deterministic fallback.
 
 Frontend:
 
@@ -214,7 +214,7 @@ Các biến môi trường bắt buộc/khuyến nghị cho production:
 - `JWT_ALGORITHM=HS256`
 - `JWT_ACCESS_TOKEN_EXPIRE_MINUTES=60`
 - `GOOGLE_API_KEY` hoặc `GOOGLE_API_KEYS`
-- `COHERE_API_KEY`
+- `COHERE_API_KEY` hoặc `COHERE_API_KEY_1`/`COHERE_API_KEY_2`/`COHERE_API_KEY_3`
 - `SAFEGUARD_PROVIDER=groq` kèm `GROQ_API_KEY`/`GROQ_API_KEYS`, hoặc `SAFEGUARD_PROVIDER=openai` kèm `OPENAI_API_KEY`
 - `CORS_ORIGINS=https://your-frontend-domain`
 - `CHROMA_PERSIST_DIR=/app/data/chroma`
@@ -226,7 +226,7 @@ Các biến môi trường bắt buộc/khuyến nghị cho production:
 - **Login demo thất bại:** đảm bảo backend đang chạy với `APP_ENV=development`; xóa database local trong `data/app.db` nếu muốn seed lại từ đầu.
 - **Chat không có citations:** upload và index tài liệu trước, sau đó hỏi bằng user có quyền đọc tài liệu đó.
 - **Readiness báo `model_provider: missing`:** thêm `GOOGLE_API_KEY` hoặc `GOOGLE_API_KEYS` vào `.env`.
-- **Rerank lỗi thiếu key:** thêm `COHERE_API_KEY`; khi debug offline có thể đặt `ONLINE_LLM_TESTS=0`.
+- **Rerank lỗi thiếu key:** thêm `COHERE_API_KEY` hoặc `COHERE_API_KEY_1`; khi debug offline có thể đặt `ONLINE_LLM_TESTS=0`.
 - **Guardrail provider lỗi:** kiểm tra `SAFEGUARD_PROVIDER` và key tương ứng; production có thể fail closed nếu provider lỗi.
 - **Port 8000 hoặc 3000 bị chiếm:** đổi port trong lệnh `uvicorn` hoặc script Vite, rồi cập nhật API URL/CORS tương ứng.
 - **Lỗi Chroma/vector store:** kiểm tra `CHROMA_PERSIST_DIR=./data/chroma` và quyền ghi vào thư mục `data/`.

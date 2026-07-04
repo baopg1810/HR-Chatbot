@@ -291,7 +291,7 @@ def _build_llm_trend_draft_content(
         title = fallback_title
     if not summary or len(summary) > 900:
         summary = fallback_summary
-    return TrendDraftContent(title=fallback_title, summary=summary)
+    return TrendDraftContent(title=title, summary=summary)
 
 
 def _build_trend_prompt(*, items: list[QueryLog], citations: list[Citation]) -> str:

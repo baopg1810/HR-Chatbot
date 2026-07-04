@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import threading
 import unicodedata
 from dataclasses import dataclass
 from functools import lru_cache
@@ -28,6 +29,8 @@ GENERIC_TOKENS = {
     "quy",
     "trinh",
 }
+_COHERE_KEY_LOCK = threading.Lock()
+_NEXT_COHERE_KEY_INDEX = 0
 
 
 @dataclass
@@ -159,39 +162,87 @@ def _rerank_candidates(query: str, candidates: list[HybridCandidate], limit: int
         return candidates[:limit]
 
     settings = get_settings()
-    if not settings.cohere_api_key:
+    api_keys = _ordered_cohere_api_keys(settings)
+    if not api_keys:
         raise RuntimeError("COHERE_API_KEY is required for retrieval reranking.")
 
-    try:
-        rerank_limit = min(len(candidates), settings.cohere_rerank_candidate_limit)
-        rerank_pool = candidates[:rerank_limit]
-        response = _cohere_client(settings.cohere_api_key).rerank(
-            model=settings.cohere_rerank_model,
-            query=query,
-            documents=[_candidate_rerank_text(candidate) for candidate in rerank_pool],
-            top_n=min(limit, len(rerank_pool)),
-            max_tokens_per_doc=settings.cohere_rerank_max_tokens_per_doc,
-        )
+    rerank_limit = min(len(candidates), settings.cohere_rerank_candidate_limit)
+    rerank_pool = candidates[:rerank_limit]
+    last_error: Exception | None = None
+    for api_key in api_keys:
+        try:
+            response = _cohere_client(api_key).rerank(
+                model=settings.cohere_rerank_model,
+                query=query,
+                documents=[_candidate_rerank_text(candidate) for candidate in rerank_pool],
+                top_n=min(limit, len(rerank_pool)),
+                max_tokens_per_doc=settings.cohere_rerank_max_tokens_per_doc,
+            )
 
-        ordered: list[HybridCandidate] = []
-        seen_indexes: set[int] = set()
-        for result in response.results:
-            index = int(result.index)
-            if index < 0 or index >= len(rerank_pool) or index in seen_indexes:
-                continue
-            candidate = rerank_pool[index]
-            candidate.rerank_score = float(result.relevance_score)
-            ordered.append(candidate)
-            seen_indexes.add(index)
+            return _apply_cohere_rerank_response(response, candidates, rerank_pool, limit)
+        except Exception as exc:
+            last_error = exc
+            continue
 
-        if len(ordered) < limit:
-            ordered.extend(candidate for index, candidate in enumerate(candidates) if index not in seen_indexes)
-        return ordered[:limit]
-    except Exception as exc:
-        if strict_online_llm_test_mode():
-            raise
-        print(f"Warning: Cohere rerank failed or timed out, falling back to database order: {exc}")
-        return candidates[:limit]
+    if strict_online_llm_test_mode() and last_error is not None:
+        raise last_error
+
+    print(f"Warning: Cohere rerank failed or timed out, falling back to database order: {last_error}")
+    return candidates[:limit]
+
+
+def _configured_cohere_api_keys(settings=None) -> list[str]:
+    settings = settings or get_settings()
+    raw_values = [
+        getattr(settings, "cohere_api_key", ""),
+        getattr(settings, "cohere_api_key_1", ""),
+        getattr(settings, "cohere_api_key_2", ""),
+        getattr(settings, "cohere_api_key_3", ""),
+    ]
+
+    keys: list[str] = []
+    seen: set[str] = set()
+    for value in raw_values:
+        key = str(value or "").strip()
+        if not key or key in seen:
+            continue
+        keys.append(key)
+        seen.add(key)
+    return keys
+
+
+def _ordered_cohere_api_keys(settings=None) -> list[str]:
+    keys = _configured_cohere_api_keys(settings)
+    if len(keys) <= 1:
+        return keys
+
+    global _NEXT_COHERE_KEY_INDEX
+    with _COHERE_KEY_LOCK:
+        start = _NEXT_COHERE_KEY_INDEX % len(keys)
+        _NEXT_COHERE_KEY_INDEX += 1
+    return keys[start:] + keys[:start]
+
+
+def _apply_cohere_rerank_response(
+    response,
+    candidates: list[HybridCandidate],
+    rerank_pool: list[HybridCandidate],
+    limit: int,
+) -> list[HybridCandidate]:
+    ordered: list[HybridCandidate] = []
+    seen_indexes: set[int] = set()
+    for result in response.results:
+        index = int(result.index)
+        if index < 0 or index >= len(rerank_pool) or index in seen_indexes:
+            continue
+        candidate = rerank_pool[index]
+        candidate.rerank_score = float(result.relevance_score)
+        ordered.append(candidate)
+        seen_indexes.add(index)
+
+    if len(ordered) < limit:
+        ordered.extend(candidate for index, candidate in enumerate(candidates) if index not in seen_indexes)
+    return ordered[:limit]
 
 
 @lru_cache
