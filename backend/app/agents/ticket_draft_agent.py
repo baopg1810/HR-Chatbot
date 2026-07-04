@@ -28,6 +28,7 @@ class TicketDraftDecision(BaseModel):
     category: TicketDraftCategory | None = None
     description: str | None = None
     missing_fields: list[TicketDraftField] = Field(default_factory=list)
+    suggested_fields: list[str] = Field(default_factory=list)
     question: str | None = None
     priority: TicketDraftPriority = "normal"
 
@@ -64,19 +65,21 @@ def _draft_with_llm(query: str, conversation_context: str | None) -> TicketDraft
 
 def _draft_with_rules(query: str) -> TicketDraftDecision:
     description = _clean_description(query)
+    category = _infer_category(description)
+    description = _fallback_ticket_description(description, category)
     if _is_payroll_issue(_normalize(description)):
         description = _sentence_case_with_period(description)
     if not _has_concrete_description(description):
         return TicketDraftDecision(
             ready=False,
             missing_fields=["description"],
+            suggested_fields=suggest_ticket_details("other", ""),
             question=(
                 "Bạn cho mình biết mô tả chi tiết vấn đề cần HR hỗ trợ nhé. "
                 "Ví dụ: bạn đang gặp khó khăn gì, liên quan đến chủ đề nào, và mong HR xử lý ra sao?"
             ),
         )
 
-    category = _infer_category(description)
     title = _title_from_description(description, category)
     return TicketDraftDecision(
         ready=True,
@@ -85,14 +88,25 @@ def _draft_with_rules(query: str) -> TicketDraftDecision:
         description=description,
         priority=_infer_priority(description),
         missing_fields=[],
+        suggested_fields=suggest_ticket_details(category, description),
         question=None,
     )
 
 
 def _finalize_decision(query: str, decision: TicketDraftDecision) -> TicketDraftDecision:
     query_description = _clean_description(query)
-    llm_description = _clean_description(decision.description or "")
-    description = query_description if _has_concrete_description(query_description) else llm_description
+    llm_description = _clean_rewritten_description(decision.description) or _clean_description(decision.description or "")
+    use_llm_description = False
+    if _is_payroll_issue(_normalize(query_description)):
+        description = query_description
+    elif _has_concrete_description(llm_description):
+        description = llm_description
+        use_llm_description = True
+    else:
+        description = query_description
+    category = decision.category or _infer_category(description)
+    if not use_llm_description:
+        description = _fallback_ticket_description(description, category)
     if _is_payroll_issue(_normalize(description)):
         description = _sentence_case_with_period(description)
     if not _has_concrete_description(description):
@@ -100,6 +114,7 @@ def _finalize_decision(query: str, decision: TicketDraftDecision) -> TicketDraft
         return TicketDraftDecision(
             ready=False,
             missing_fields=list(dict.fromkeys(missing)),
+            suggested_fields=suggest_ticket_details("other", ""),
             question=(
                 "Bạn cho mình biết mô tả chi tiết vấn đề cần HR hỗ trợ nhé. "
                 "Mình sẽ dùng thông tin đó để điền form ticket."
@@ -115,6 +130,7 @@ def _finalize_decision(query: str, decision: TicketDraftDecision) -> TicketDraft
         description=description,
         priority=decision.priority or _infer_priority(description),
         missing_fields=[],
+        suggested_fields=suggest_ticket_details(category, description),
         question=None,
     )
 
@@ -128,7 +144,8 @@ def _build_ticket_draft_prompt(query: str, conversation_context: str | None) -> 
             "Bạn là một ReAct-style agent nhỏ chuyên chuẩn bị ticket HR cho nhân viên.\n"
             "Nhiệm vụ: quan sát tin nhắn mới nhất và lịch sử gần đây, trích xuất form ticket nếu đủ thông tin.\n"
             "Không tạo ticket thật. Không bịa chi tiết cụ thể chưa có trong tin nhắn.\n"
-            "Bạn được phép tự viết tiêu đề ngắn và chọn danh mục phù hợp nếu mô tả vấn đề đã rõ.\n"
+            "Bạn được phép tự viết tiêu đề ngắn, chọn danh mục phù hợp và viết lại description thành 1 đoạn ngắn, tự nhiên nếu mô tả vấn đề đã rõ.\n"
+            "Description không được lặp lại các cụm như 'tạo ticket', 'mở ticket', 'gửi yêu cầu' nếu đó chỉ là ý định thao tác.\n"
             "Nếu chưa có mô tả vấn đề cụ thể, hãy hỏi lại đúng thông tin còn thiếu.\n\n"
             "Danh mục hợp lệ:\n"
             f"{categories}\n\n"
@@ -179,10 +196,78 @@ def _clean_description(value: str | None) -> str:
     if not value:
         return ""
     cleaned = _compact(value).strip()
+    cleaned = re.sub(
+        r"^\s*(tôi|toi|mình|minh|em|anh|chị|chi)?\s*(muốn|muon|cần|can|xin|vui\s+lòng|vui\s+long)?\s*"
+        r"(tạo|tao|mở|mo|gửi|gui|lập|lap)\s+(ticket|phiếu|phieu|yêu cầu|yeu cau)\s*"
+        r"(giúp tôi|giup toi|cho tôi|cho toi|giúp mình|giup minh|cho mình|cho minh)?\s*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     cleaned = re.sub(r"^\s*(tạo|tao|mở|mo|gửi|gui|lập|lap)\s+(ticket|phiếu|phieu|yêu cầu|yeu cau)\s*(giúp tôi|giup toi|cho tôi|cho toi)?\s*", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"^\s*(giúp tôi|giup toi|cho tôi|cho toi)\s+(tạo|tao|mở|mo|gửi|gui|lập|lap)\s+(ticket|phiếu|phieu|yêu cầu|yeu cau)\s*", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"^\s*(về việc|ve viec|về|ve)\s+", "", cleaned, flags=re.IGNORECASE)
     return cleaned.strip(" .")
+
+
+def rewrite_ticket_description(
+    current_description: str,
+    new_detail: str,
+    category: TicketDraftCategory | None = None,
+) -> str:
+    current = _clean_description(current_description)
+    detail = _clean_description(new_detail)
+    if not detail:
+        return current
+    if current and _normalize(detail) in _normalize(current):
+        return current
+
+    generated = generate_text(_build_description_rewrite_prompt(current, detail, category))
+    rewritten = _clean_rewritten_description(generated)
+    if rewritten:
+        return rewritten
+
+    combined = " ".join(part for part in [current.rstrip(".!?"), detail] if part)
+    return _fallback_ticket_description(combined, category)
+
+
+def _build_description_rewrite_prompt(
+    current_description: str,
+    new_detail: str,
+    category: TicketDraftCategory | None,
+) -> str:
+    category_label = TICKET_CATEGORY_LABELS.get(category or "other", TICKET_CATEGORY_LABELS["other"])
+    return (
+        "Bạn là trợ lý HR đang biên tập mô tả ticket.\n"
+        "Hãy viết lại thành đúng 1 đoạn tiếng Việt ngắn, tự nhiên, đủ ý từ mô tả hiện tại và thông tin mới.\n"
+        "Không bịa thêm ngày, người, số liệu hoặc chi tiết chưa được cung cấp.\n"
+        "Không dùng bullet, markdown, lời chào, hoặc các cụm 'tạo ticket', 'mở ticket', 'gửi yêu cầu' nếu chỉ là thao tác.\n\n"
+        f"Danh mục: {category_label}\n"
+        f"Mô tả hiện tại: {current_description or '(trống)'}\n"
+        f"Thông tin mới: {new_detail}\n\n"
+        "Chỉ trả về đoạn mô tả."
+    )
+
+
+def _clean_rewritten_description(value: str | None) -> str:
+    if not value:
+        return ""
+    cleaned = _compact(value).strip(" `\"'")
+    cleaned = re.sub(r"^mô\s+tả\s*:\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*\n+\s*", " ", cleaned)
+    if not _has_concrete_description(cleaned):
+        return ""
+    return cleaned[:800].strip()
+
+
+def _fallback_ticket_description(description: str, category: TicketDraftCategory | None = None) -> str:
+    cleaned = _clean_description(description)
+    if not cleaned:
+        return ""
+    normalized = _normalize(cleaned)
+    if category == "leave" and normalized in {"xin nghi phep", "nghi phep", "dang ky nghi phep", "xin dang ky nghi phep"}:
+        return "Tôi muốn đăng ký nghỉ phép."
+    return cleaned
 
 
 def _has_concrete_description(value: str) -> bool:
@@ -219,6 +304,49 @@ def _infer_category(description: str) -> TicketDraftCategory:
     if re.search(r"\b(hop\s+dong|ho\s+so|giay\s+to|thu\s+tuc|xac\s+nhan|onboarding|offboarding|nghi\s+viec)\b", normalized):
         return "documents"
     return "other"
+
+
+def suggest_ticket_details(category: TicketDraftCategory | None, description: str = "") -> list[str]:
+    normalized = _normalize(description)
+    if category == "leave":
+        suggestions = [
+            "Ngày hoặc buổi nghỉ cụ thể",
+            "Lý do nghỉ và loại nghỉ nếu có",
+            "Bạn đã báo quản lý trực tiếp chưa",
+            "Người hoặc đầu việc sẽ bàn giao trong thời gian nghỉ",
+        ]
+    elif category == "benefits":
+        suggestions = [
+            "Kỳ lương, phúc lợi hoặc bảo hiểm liên quan",
+            "Số tiền/trạng thái bạn thấy chưa đúng nếu có",
+            "Ảnh chụp payslip, thông báo hoặc email liên quan",
+            "Mong muốn HR kiểm tra hoặc điều chỉnh điều gì",
+        ]
+    elif category == "equipment":
+        suggestions = [
+            "Thiết bị, tài khoản hoặc hệ thống đang gặp vấn đề",
+            "Thông báo lỗi hoặc ảnh chụp màn hình nếu có",
+            "Thời điểm bắt đầu và mức độ ảnh hưởng công việc",
+            "Bạn cần cấp mới, sửa lỗi hay mở quyền truy cập",
+        ]
+    elif category == "documents":
+        suggestions = [
+            "Loại giấy tờ hoặc thủ tục cần HR hỗ trợ",
+            "Mốc thời gian hoặc hạn xử lý mong muốn",
+            "Phòng ban/người liên quan nếu có",
+            "File, email hoặc thông tin tham chiếu liên quan",
+        ]
+    else:
+        suggestions = [
+            "Vấn đề hoặc yêu cầu cụ thể cần HR xử lý",
+            "Thời gian, địa điểm hoặc người liên quan nếu có",
+            "Tác động hiện tại đến công việc của bạn",
+            "Mong muốn HR hỗ trợ theo hướng nào",
+        ]
+
+    if "anh chup" in normalized or "hinh anh" in normalized or "screenshot" in normalized:
+        suggestions = [item for item in suggestions if "ảnh" not in item.lower()]
+    return suggestions
 
 
 def _infer_priority(description: str) -> TicketDraftPriority:
@@ -270,14 +398,14 @@ def _title_from_description(description: str, category: TicketDraftCategory) -> 
 def _is_payroll_issue(normalized: str) -> bool:
     return bool(
         re.search(
-            r"\b(cham\s+luong|tre\s+luong|chua\s+nhan\s+luong|thieu\s+luong|sai\s+luong|luong\s+thang|payroll\s+issue|salary\s+delay|salary\s+missing|payslip|tax\s+deduction|insurance\s+deduction)\b",
+            r"\b(cham\s+luong|tre\s+luong|chua\s+nhan(?:\s+duoc)?\s+luong|thieu\s+luong|sai\s+luong|luong\s+thang|payroll\s+issue|salary\s+delay|salary\s+missing|payslip|tax\s+deduction|insurance\s+deduction)\b",
             normalized,
         )
     )
 
 
 def _is_payroll_delay(normalized: str) -> bool:
-    return bool(re.search(r"\b(cham\s+luong|tre\s+luong|chua\s+nhan\s+luong|salary\s+delay|salary\s+missing)\b", normalized))
+    return bool(re.search(r"\b(cham\s+luong|tre\s+luong|chua\s+nhan(?:\s+duoc)?\s+luong|salary\s+delay|salary\s+missing)\b", normalized))
 
 
 def _payroll_month(normalized: str) -> str | None:

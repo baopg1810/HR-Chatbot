@@ -1,19 +1,56 @@
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, MessageSquareText, BookOpen, Ticket, Settings as SettingsIcon, LogOut, Bot, Shield, FileText, TrendingUp, X } from 'lucide-react';
+import { LayoutDashboard, MessageSquareText, BookOpen, Ticket, Settings as SettingsIcon, LogOut, Bot, Shield, FileText, TrendingUp, X, PanelLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../hooks/useAuth';
+import { listChatSessions, ChatSessionRecord } from '../lib/api';
 
 export function Sidebar({ onClose, onDesktopToggle, isCollapsed = false }: { onClose?: () => void, onDesktopToggle?: () => void, isCollapsed?: boolean }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+
+  const [historySessions, setHistorySessions] = useState<ChatSessionRecord[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+
+  const refreshHistorySessions = async () => {
+    if (!user?.token) {
+      setHistorySessions([]);
+      return;
+    }
+    try {
+      const sessions = await listChatSessions(user.token);
+      setHistorySessions(sessions);
+    } catch (err) {
+      console.error('Error fetching chat sessions in Sidebar:', err);
+    }
+  };
+
+  useEffect(() => {
+    void refreshHistorySessions();
+
+    const handleUpdate = () => {
+      void refreshHistorySessions();
+    };
+    window.addEventListener('chat-session-updated', handleUpdate);
+    return () => window.removeEventListener('chat-session-updated', handleUpdate);
+  }, [user?.token]);
+
+  useEffect(() => {
+    const updateActive = () => {
+      setCurrentSessionId(localStorage.getItem('current_chat_session_id'));
+    };
+    updateActive();
+    window.addEventListener('chat-session-active-changed', updateActive);
+    return () => window.removeEventListener('chat-session-active-changed', updateActive);
+  }, []);
   
   const knowledgeNavItem = user?.role === 'admin'
     ? { name: 'Kho tri thức', path: '/knowledge-base', icon: BookOpen, roles: ['admin'] }
     : { name: 'Chủ đề phổ biến', path: '/knowledge-base', icon: TrendingUp, roles: ['user'] };
 
   const navItems = [
-    { name: 'Chatbot AI', path: '/chat', icon: MessageSquareText, roles: ['user', 'admin'] },
+    { name: 'Cuộc trò chuyện mới', path: '/chat', icon: MessageSquareText, roles: ['user', 'admin'], state: { newChat: true } },
     knowledgeNavItem,
     { name: 'Yêu cầu của tôi', path: '/tickets', icon: Ticket, roles: ['user'] },
     { name: 'Tài nguyên', path: '/resources', icon: FileText, roles: ['user', 'admin'] },
@@ -31,7 +68,7 @@ export function Sidebar({ onClose, onDesktopToggle, isCollapsed = false }: { onC
 
   return (
     <div className={cn(
-      "h-full border-r border-gray-200 dark:border-discord-bg flex flex-col pt-6 pb-6 shadow-sm shrink-0 bg-white dark:bg-discord-sidebar relative transition-all duration-300",
+      "h-full border-r border-gray-200 dark:border-discord-bg flex flex-col pt-4 pb-4 shadow-sm shrink-0 bg-white dark:bg-discord-sidebar relative transition-all duration-300",
       isCollapsed ? "w-20" : "w-64"
     )}>
       {onClose && (
@@ -42,33 +79,51 @@ export function Sidebar({ onClose, onDesktopToggle, isCollapsed = false }: { onC
           <X size={20} />
         </button>
       )}
-      <div className={cn("mb-10 flex items-center gap-3", isCollapsed ? "justify-center px-0" : "px-6")}>
-        <button 
-          onClick={() => { if (onDesktopToggle) onDesktopToggle(); }}
-          className="w-10 h-10 rounded-full bg-brand-blue flex items-center justify-center text-white shrink-0 shadow-md hover:opacity-90 transition-opacity cursor-pointer md:cursor-pointer"
-          title={isCollapsed ? "Mở rộng Sidebar" : "Thu gọn Sidebar"}
-        >
-          <Bot size={24} />
-        </button>
-        {!isCollapsed && (
-          <div className="overflow-hidden">
-            <h1 className="font-semibold text-[17px] leading-tight text-brand-blue dark:text-discord-text whitespace-nowrap">Supportive AI</h1>
-            <p className="text-xs text-brand-blue/70 dark:text-discord-text-muted whitespace-nowrap">HR Intelligence</p>
-          </div>
+      <div className={cn("mb-6 flex items-center gap-3", isCollapsed ? "justify-center px-0" : "px-6")}>
+        {isCollapsed ? (
+          <button 
+            onClick={() => { if (onDesktopToggle) onDesktopToggle(); }}
+            className="w-10 h-10 rounded-full bg-brand-blue flex items-center justify-center text-white shrink-0 shadow-md hover:opacity-90 transition-opacity cursor-pointer"
+            title="Mở rộng Sidebar"
+          >
+            <Bot size={24} />
+          </button>
+        ) : (
+          <>
+            <div className="w-10 h-10 rounded-full bg-brand-blue flex items-center justify-center text-white shrink-0 shadow-md">
+              <Bot size={24} />
+            </div>
+            <div className="flex-1 flex items-center justify-between min-w-0">
+              <div className="overflow-hidden">
+                <h1 className="font-semibold text-[17px] leading-tight text-brand-blue dark:text-discord-text whitespace-nowrap">Supportive AI</h1>
+                <p className="text-xs text-brand-blue/70 dark:text-discord-text-muted whitespace-nowrap">HR Intelligence</p>
+              </div>
+              <button
+                onClick={() => { if (onDesktopToggle) onDesktopToggle(); }}
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-discord-card hover:text-brand-blue dark:hover:text-white transition-colors cursor-pointer ml-2 shrink-0"
+                title="Thu gọn Sidebar"
+              >
+                <PanelLeft size={20} />
+              </button>
+            </div>
+          </>
         )}
       </div>
 
       <nav className={cn("flex-1 space-y-1 overflow-y-auto overflow-x-hidden", isCollapsed ? "px-2" : "px-3")}>
         {visibleNavItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = item.path === '/chat'
+            ? (location.pathname === '/chat' && !currentSessionId)
+            : (location.pathname === item.path);
           return (
             <Link
               key={item.path}
               to={item.path}
+              state={(item as any).state}
               onClick={handleNavClick}
               className={cn(
                 "flex items-center gap-3 rounded-xl transition-all duration-200",
-                isCollapsed ? "justify-center py-3 px-0 mx-auto w-12" : "px-3 py-3 w-full",
+                isCollapsed ? "justify-center py-2 px-0 mx-auto w-12" : "px-3 py-2 w-full",
                 isActive 
                   ? "bg-brand-mint dark:bg-discord-accent text-brand-blue dark:text-white shadow-sm" 
                   : "text-gray-600 dark:text-discord-text-muted hover:bg-gray-100 dark:hover:bg-discord-card dark:hover:text-discord-text hover:text-brand-blue"
@@ -80,12 +135,46 @@ export function Sidebar({ onClose, onDesktopToggle, isCollapsed = false }: { onC
             </Link>
           );
         })}
+
+        {!isCollapsed && (
+          <div className="pt-3 border-t border-gray-200 dark:border-discord-bg mt-3">
+            <div className="px-3 pb-1.5">
+              <span className="text-[11px] font-bold text-gray-400 dark:text-discord-text-muted uppercase tracking-wider">
+                Lịch sử trò chuyện
+              </span>
+            </div>
+            <div className="space-y-0.5 max-h-[320px] overflow-y-auto pr-1">
+              {historySessions.map((session) => (
+                <Link
+                  key={session.id}
+                  to="/chat"
+                  state={{ sessionId: session.id }}
+                  onClick={handleNavClick}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all duration-200 group text-[14px]",
+                    location.pathname === '/chat' && currentSessionId === session.id
+                      ? "bg-brand-mint dark:bg-discord-accent text-brand-blue dark:text-white shadow-sm"
+                      : "text-gray-600 dark:text-discord-text-muted hover:bg-gray-100 dark:hover:bg-discord-card hover:text-brand-blue"
+                  )}
+                >
+                  <MessageSquareText size={16} className={cn("shrink-0", location.pathname === '/chat' && currentSessionId === session.id ? "text-brand-blue dark:text-white" : "text-gray-500 dark:text-discord-text-muted")} />
+                  <span className="truncate flex-1 font-medium">{session.title || 'Cuộc trò chuyện'}</span>
+                </Link>
+              ))}
+              {historySessions.length === 0 && (
+                <span className="block text-xs text-gray-400 dark:text-discord-text-muted px-3 py-2">
+                  Chưa có cuộc trò chuyện nào
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
-      <div className={cn("mt-6 pt-6 border-t border-gray-200 dark:border-discord-bg flex flex-col gap-2 transition-all duration-300", isCollapsed ? "px-2 items-center" : "px-6")}>
+      <div className={cn("mt-4 pt-4 border-t border-gray-200 dark:border-discord-bg flex flex-col gap-1.5 transition-all duration-300", isCollapsed ? "px-2 items-center" : "px-6")}>
         <button 
           onClick={() => { navigate('/submit-ticket'); handleNavClick(); }}
-          className={cn("bg-brand-blue dark:bg-discord-accent hover:bg-[#051c5e] dark:hover:bg-[#4752C4] text-white py-2.5 transition-all duration-200 flex items-center justify-center mb-4 shadow-md", isCollapsed ? "w-10 h-10 rounded-full mx-auto" : "w-full gap-2 rounded-lg text-sm font-medium")}
+          className={cn("bg-brand-blue dark:bg-discord-accent hover:bg-[#051c5e] dark:hover:bg-[#4752C4] text-white py-2 transition-all duration-200 flex items-center justify-center mb-2 shadow-md", isCollapsed ? "w-10 h-10 rounded-full mx-auto" : "w-full gap-2 rounded-lg text-sm font-medium")}
           title={isCollapsed ? "Tạo yêu cầu mới" : undefined}
         >
           <span className="text-lg leading-none shrink-0">+</span>

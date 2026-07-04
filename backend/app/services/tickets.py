@@ -219,8 +219,21 @@ def reset_ticket_store() -> None:
     pass
 
 def _summarize(message: str, max_len: int = 180) -> str:
-    summary = " ".join(message.split())
+    summary = _extract_ticket_title(message) or " ".join(message.split())
     if len(summary) <= max_len:
         return summary
     return summary[: max_len - 3] + "..."
+
+
+def _extract_ticket_title(message: str) -> str | None:
+    for line in str(message or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        label, separator, value = line.partition(":")
+        if separator and label.strip().lower() in {"tiêu đề", "tieu de", "title"}:
+            title = " ".join(value.split()).strip()
+            return title or None
+        break
+    return None
 

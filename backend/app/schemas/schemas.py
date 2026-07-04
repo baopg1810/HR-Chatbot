@@ -141,6 +141,7 @@ class PendingTicketDraft(BaseModel):
     description: str | None = None
     priority: TicketPriority = "normal"
     missing_fields: list[str] = Field(default_factory=list)
+    suggested_fields: list[str] = Field(default_factory=list)
     session_id: str | None = None
 
 

@@ -130,6 +130,13 @@ SENSITIVE_FIELD_PATTERNS = [
     r"\b(dia\s+chi\s+nha|so\s+dien\s+thoai\s+ca\s+nhan|email\s+ca\s+nhan)\b",
 ]
 
+PERSONAL_HR_METRIC_PATTERNS = [
+    r"\b(ngay\s+phep|nghi\s+phep|phep\s+nam|leave)\b.{0,40}\b(con\s+lai|remaining|balance|status)\b",
+    r"\b(con\s+lai|remaining|balance|status)\b.{0,40}\b(ngay\s+phep|nghi\s+phep|phep\s+nam|leave)\b",
+    r"\b(trang\s+thai|status)\b.{0,40}\b(bao\s+hiem|insurance|khen\s+thuong|xet\s+duyet|reward|review)\b",
+    r"\b(bao\s+hiem|insurance|khen\s+thuong|xet\s+duyet|reward|review)\b.{0,40}\b(trang\s+thai|status)\b",
+]
+
 THIRD_PARTY_PATTERNS = [
     r"\b(cua|cau|cho|ve|xem)\s+(nguyen|tran|le|pham|hoang|huynh|phan|vu|vo|dang|bui|do|ho|ngo|duong)\b",
     r"\b(cua|cau|cho|ve)\s+(anh|chi|ban|dong\s+nghiep|nhan\s+vien)\s+[a-z0-9]",
@@ -341,6 +348,16 @@ def rule_output_safeguard(
             internal_reason="output_contains_pii",
         )
 
+    if user_message and _is_sensitive_data_request(_normalize(user_message)):
+        return OutputSafeguardDecision(
+            allowed=False,
+            action="fallback",
+            risk_level="high",
+            user_message=SENSITIVE_DATA_MESSAGE,
+            redacted_text=None,
+            internal_reason="output_for_sensitive_request",
+        )
+
     if user_message and _is_outside_scope(_normalize(user_message)):
         return OutputSafeguardDecision(
             allowed=False,
@@ -428,6 +445,9 @@ def _evaluate_rule_guardrails(message: str) -> GuardrailDecision:
 
 def _is_sensitive_data_request(normalized: str) -> bool:
     has_sensitive_field = _matches_any(normalized, SENSITIVE_FIELD_PATTERNS)
+    has_personal_metric_field = _matches_any(normalized, PERSONAL_HR_METRIC_PATTERNS)
+    if has_personal_metric_field and _is_third_party_sensitive_request(normalized):
+        return True
     if not has_sensitive_field:
         return False
     always_sensitive = _matches_any(
@@ -465,10 +485,70 @@ def _has_named_sensitive_target(normalized: str) -> bool:
         "quy dinh",
         "toi",
     }
-    for match in re.finditer(r"\b(?:cua|cau|cho|ve|xem)\s+([a-z0-9]{2,})(?:\s+([a-z0-9]{2,}))?", normalized):
-        target = " ".join(part for part in match.groups() if part)
-        first_token = match.group(1)
-        if target in non_person_targets or first_token in non_person_targets:
+    non_person_prefixes = {
+        "ban than",
+        "bao hiem",
+        "chinh sach",
+        "cong ty",
+        "he thong",
+        "noi bo",
+        "quy dinh",
+    }
+    ambiguous_non_person_tokens = {"ban", "chinh", "cong", "phong", "quy"}
+    field_like_target_tokens = {
+        "bang",
+        "con",
+        "duyet",
+        "insurance",
+        "khen",
+        "leave",
+        "luong",
+        "ngay",
+        "nghi",
+        "payroll",
+        "phep",
+        "review",
+        "salary",
+        "so",
+        "status",
+        "thai",
+        "thuong",
+        "trang",
+        "xet",
+    }
+    vietnamese_name_cues = {
+        "nguyen",
+        "tran",
+        "le",
+        "pham",
+        "hoang",
+        "huynh",
+        "phan",
+        "vu",
+        "vo",
+        "dang",
+        "bui",
+        "do",
+        "ho",
+        "ngo",
+        "duong",
+    }
+
+    target_token = r"(?!(?:cua|cau|cho|ve|xem)\b)[a-z0-9]{2,}"
+    target_pattern = rf"\b(?:cua|cau|cho|ve|xem)\s+({target_token}(?:\s+{target_token}){{0,3}})"
+    for match in re.finditer(target_pattern, normalized):
+        target_tokens = match.group(1).split()
+        target = " ".join(target_tokens)
+        first_token = target_tokens[0]
+        if target in non_person_targets:
+            continue
+        if any(target == prefix or target.startswith(f"{prefix} ") for prefix in non_person_prefixes):
+            continue
+        if first_token in field_like_target_tokens and not vietnamese_name_cues.intersection(target_tokens[1:]):
+            continue
+        if first_token in ambiguous_non_person_tokens and not vietnamese_name_cues.intersection(target_tokens[1:]):
+            continue
+        if first_token in non_person_targets and first_token not in ambiguous_non_person_tokens:
             continue
         return True
     return False

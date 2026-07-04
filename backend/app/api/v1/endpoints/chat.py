@@ -279,11 +279,10 @@ async def _stream_chat_answer_chunks(
             answer = ""
             for token in stream_cited_answer(request.message, citations, conversation_context=conversation_context):
                 answer += token
+                yield {"text": token}
                 await asyncio.sleep(0)
             state.update({"answer": answer, "citations": citations, "actions": [_no_action()]})
             response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
-            async for chunk in _stream_finished_answer_chunks(response):
-                yield chunk
             yield {"response": response}
             return
         if route == "handle_no_source":
@@ -298,11 +297,10 @@ async def _stream_chat_answer_chunks(
     answer = ""
     for token in stream_general_answer(request.message, user_name, conversation_context=conversation_context):
         answer += token
+        yield {"text": token}
         await asyncio.sleep(0)
     state.update({"answer": answer, "citations": [], "actions": [_no_action()]})
     response = await _response_from_state_with_output_guardrail(state, message_id=message_id, session_id=session_id)
-    async for chunk in _stream_finished_answer_chunks(response):
-        yield chunk
     yield {"response": response}
 
 
@@ -592,7 +590,7 @@ async def _history_actions_by_message_id(db: AsyncSession, session_id: str, mess
     if last_ai_message is None:
         return {}
 
-    from app.agents.ticket_draft_agent import TICKET_CATEGORY_LABELS, format_ticket_message
+    from app.agents.ticket_draft_agent import TICKET_CATEGORY_LABELS, format_ticket_message, suggest_ticket_details
 
     action = ChatAction(
         type="ticket_draft_confirmation",
@@ -606,6 +604,7 @@ async def _history_actions_by_message_id(db: AsyncSession, session_id: str, mess
             "reason": "user_requested",
             "priority": draft.priority,
             "session_id": session_id,
+            "suggested_fields": draft.suggested_fields or suggest_ticket_details(draft.category, draft.description),
         },
     )
     return {str(last_ai_message.id): [action.model_dump(mode="json")]}

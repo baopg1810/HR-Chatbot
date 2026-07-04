@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bot, Clock, MessageSquare, Plus, Send, Ticket, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Message } from '../types';
 import { cn } from '../lib/utils';
 import {
@@ -38,6 +38,7 @@ interface TicketDraftFormValues {
   description: string;
   reason: string;
   priority: string;
+  suggestedFields: string[];
   sessionId?: string | null;
 }
 
@@ -52,47 +53,34 @@ const ticketCategories: { value: TicketCategory; label: string }[] = [
 export function Chat() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [historySessions, setHistorySessions] = useState<ChatSessionRecord[]>([]);
   const [messages, setMessages] = useState<Message[]>([newWelcomeMessage()]);
 
+  const hasTicketDraft = messages.some((message) =>
+    message.attachments?.some((attachment) => attachment.url === 'ticket_draft_confirmation'),
+  );
+
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const refreshHistorySessions = async () => {
-    if (!user) {
-      setHistorySessions([]);
-      return;
-    }
-    try {
-      setHistorySessions(await listChatSessions(user.token));
-    } catch (err) {
-      console.error('Error fetching chat sessions:', err);
-    }
-  };
-
-  useEffect(() => {
-    void refreshHistorySessions();
-  }, [user?.token]);
-
   const handleNewChat = () => {
     setSessionId(null);
     setMessages([newWelcomeMessage()]);
-    setIsSidebarOpen(false);
   };
 
-  const handleSelectSession = async (session: ChatSessionRecord) => {
+  const handleSelectSessionById = async (sid: string) => {
     if (!user) return;
     setIsLoading(true);
     try {
-      const history = await getChatSessionMessages(user.token, session.id);
-      setSessionId(session.id);
+      const history = await getChatSessionMessages(user.token, sid);
+      setSessionId(sid);
       setMessages(
         history.length > 0
           ? history.map((message) => ({
@@ -107,13 +95,32 @@ export function Chat() {
             }))
           : [newWelcomeMessage()],
       );
-      setIsSidebarOpen(false);
     } catch (err) {
       console.error('Error loading chat session:', err);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.newChat) {
+      handleNewChat();
+      window.history.replaceState({}, document.title);
+    } else if (state?.sessionId) {
+      void handleSelectSessionById(state.sessionId);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem('current_chat_session_id', sessionId);
+    } else {
+      localStorage.removeItem('current_chat_session_id');
+    }
+    window.dispatchEvent(new Event('chat-session-active-changed'));
+  }, [sessionId]);
 
   const handleSend = async () => {
     if (!input.trim() || !user) return;
@@ -168,7 +175,7 @@ export function Chat() {
                 : message,
             ),
           );
-          void refreshHistorySessions();
+          window.dispatchEvent(new Event('chat-session-updated'));
         },
       });
     } catch (err) {
@@ -301,14 +308,27 @@ export function Chat() {
 
   const handleDismissEscalation = async (messageId: string, attachmentIndex: number) => {
     const attachment = messages.find((message) => message.id === messageId)?.attachments?.[attachmentIndex];
+    const isTicketDraft = attachment?.url === 'ticket_draft_confirmation';
     const payloadSessionId =
       typeof attachment?.data?.session_id === 'string' ? attachment.data.session_id : sessionId;
-    if (user && attachment?.url === 'ticket_draft_confirmation' && payloadSessionId) {
+    if (user && isTicketDraft && payloadSessionId) {
       try {
         await clearChatSessionState(user.token, payloadSessionId);
       } catch (err) {
         console.error('Error clearing ticket draft state:', err);
       }
+    }
+    if (isTicketDraft) {
+      setMessages((prev) => [
+        ...removeTicketDraftAttachments(prev),
+        {
+          id: crypto.randomUUID(),
+          sender: 'ai',
+          text: 'Ticket nháp đã được hủy. Mình sẽ không gửi yêu cầu này cho HR.',
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      return;
     }
     setMessages((prev) =>
       prev.map((message) =>
@@ -323,36 +343,18 @@ export function Chat() {
   };
 
   const suggestions = [
-    'Tôi còn bao nhiêu ngày phép?',
-    'Quy định nghỉ phép cần báo trước bao lâu?',
-    'Trạng thái bảo hiểm của tôi là gì?',
+    'Thời gian thử việc tại công ty quy định thế nào?',
+    'Chế độ thưởng các ngày lễ Tết và thâm niên thế nào?',
   ];
 
-  const hasTicketDraft = messages.some((message) =>
-    message.attachments?.some((attachment) => attachment.url === 'ticket_draft_confirmation'),
-  );
+  const isLastMessageAiLoading = messages.length > 0 && messages[messages.length - 1].sender === 'ai' && !messages[messages.length - 1].text;
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-discord-bg relative overflow-hidden transition-colors">
-      <div className="absolute top-4 right-4 z-10 md:top-6 md:right-8 flex items-center gap-3">
-        <button
-          onClick={handleNewChat}
-          className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white dark:bg-discord-card border border-gray-200 dark:border-discord-bg flex items-center justify-center text-gray-500 dark:text-discord-text-muted hover:bg-gray-50 dark:hover:bg-discord-card-hover shadow-sm transition-colors"
-          title="Phiên trò chuyện mới"
-        >
-          <Plus size={20} />
-        </button>
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white dark:bg-discord-card border border-gray-200 dark:border-discord-bg flex items-center justify-center text-gray-500 dark:text-discord-text-muted hover:bg-gray-50 dark:hover:bg-discord-card-hover shadow-sm transition-colors"
-          title="Lịch sử trò chuyện"
-        >
-          <Clock size={20} />
-        </button>
-      </div>
+      {/* Nút Clock lịch sử đã được chuyển vào Sidebar chính */}
 
-      <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-[15%] pt-20 md:pt-16 pb-6">
-        <div className="space-y-6 md:space-y-8 max-w-4xl mx-auto">
+      <div className={cn('flex-1 overflow-y-auto px-4 md:px-8 lg:px-[15%]', hasTicketDraft ? 'pt-10 md:pt-8 pb-3' : 'pt-20 md:pt-16 pb-6')}>
+        <div className={cn('max-w-4xl mx-auto', hasTicketDraft ? 'space-y-4' : 'space-y-6 md:space-y-8')}>
           {messages.map((msg) => {
             const isUser = msg.sender === 'user';
 
@@ -377,7 +379,13 @@ export function Chat() {
                       {msg.text}
                     </div>
                   ) : (
-                    <MarkdownMessage text={msg.text} />
+                    msg.text.trim() ? (
+                      <MarkdownMessage text={msg.text} />
+                    ) : (
+                      <div className="flex items-center py-2">
+                        <div className="w-4 h-4 bg-white border border-gray-300 dark:border-transparent dark:bg-white rounded-full animate-scale-circle shadow-sm shrink-0" />
+                      </div>
+                    )
                   )}
 
                   {msg.attachments?.map((attachment, i) =>
@@ -445,8 +453,15 @@ export function Chat() {
             );
           })}
 
-          {isLoading && (
-            <div className="text-sm text-gray-500 dark:text-discord-text-muted pl-12">AI đang trả lời...</div>
+          {isLoading && !isLastMessageAiLoading && (
+            <div className="flex items-start gap-4 w-full">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-brand-mint text-[#048261] dark:bg-discord-accent dark:text-white">
+                <Bot size={18} />
+              </div>
+              <div className="flex items-center py-2">
+                <div className="w-4 h-4 bg-white border border-gray-300 dark:border-transparent dark:bg-white rounded-full animate-scale-circle shadow-sm shrink-0" />
+              </div>
+            </div>
           )}
           <div ref={bottomRef} className="h-4" />
         </div>
@@ -460,21 +475,22 @@ export function Chat() {
       >
         <div className="max-w-3xl mx-auto w-full">
           {!hasTicketDraft && (
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-2 [scrollbar-width:none]">
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => setInput(suggestion)}
-                className="whitespace-nowrap px-4 py-2 rounded-full bg-white dark:bg-discord-card border border-gray-200 dark:border-discord-bg text-gray-600 dark:text-discord-text-muted shadow-sm text-sm font-medium hover:bg-gray-50 dark:hover:bg-discord-card-hover transition-colors"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => setInput(suggestion)}
+                  className="whitespace-nowrap px-4 py-2 rounded-full bg-white dark:bg-discord-card border border-gray-200 dark:border-discord-bg text-gray-600 dark:text-discord-text-muted shadow-sm text-sm font-medium hover:bg-gray-50 dark:hover:bg-discord-card-hover transition-colors"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
           )}
 
           <div className="relative flex items-center shadow-lg rounded-full bg-white dark:bg-discord-card border border-gray-200 dark:border-discord-bg focus-within:ring-2 focus-within:ring-gray-100 dark:focus-within:ring-discord-accent/20 transition-shadow">
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -496,72 +512,7 @@ export function Chat() {
         </div>
       </div>
 
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 dark:bg-black/50 z-40 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      <div
-        className={cn(
-          'fixed inset-y-0 right-0 w-[280px] md:w-80 bg-white dark:bg-discord-sidebar shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col',
-          isSidebarOpen ? 'translate-x-0' : 'translate-x-full',
-        )}
-      >
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-discord-bg">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-discord-text flex items-center gap-2">
-            <Clock size={20} className="text-brand-blue dark:text-discord-accent" />
-            Lịch sử trò chuyện
-          </h2>
-          <button
-            onClick={() => setIsSidebarOpen(false)}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-discord-card text-gray-500 dark:text-discord-text-muted transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="p-4 border-b border-gray-100 dark:border-discord-bg">
-          <button
-            onClick={handleNewChat}
-            className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-discord-bg px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-discord-text hover:bg-gray-50 dark:hover:bg-discord-card transition-colors"
-          >
-            <Plus size={16} />
-            Đoạn chat mới
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-1">
-            {historySessions.map((session) => (
-              <button
-                key={session.id}
-                onClick={() => handleSelectSession(session)}
-                className={cn(
-                  'w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-discord-card transition-colors text-left group',
-                  sessionId === session.id && 'bg-[#e0fbf4] dark:bg-discord-card-hover',
-                )}
-              >
-                <div className="w-8 h-8 rounded-full bg-[#f8f9fc] dark:bg-discord-card flex items-center justify-center text-gray-400 dark:text-discord-text-muted group-hover:text-brand-blue dark:group-hover:text-discord-accent transition-colors shrink-0">
-                  <MessageSquare size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-medium text-gray-700 dark:text-discord-text group-hover:text-gray-900 dark:group-hover:text-white truncate">
-                    {session.title || 'Cuộc trò chuyện'}
-                  </span>
-                  <span className="block text-[11px] text-gray-400 dark:text-discord-text-muted mt-0.5">
-                    {session.updated_at ? new Date(session.updated_at).toLocaleDateString('vi-VN') : ''}
-                  </span>
-                </div>
-              </button>
-            ))}
-            {historySessions.length === 0 && (
-              <div className="text-sm text-gray-400 dark:text-discord-text-muted text-center py-8">
-                Chưa có lịch sử trò chuyện
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Sidebar Lịch sử cũ đã bị xóa và tích hợp vào Sidebar chính */}
     </div>
   );
 }
@@ -595,21 +546,23 @@ function TicketDraftCard({
           description,
           reason: initialDraft.reason,
           priority: initialDraft.priority,
+          suggestedFields: initialDraft.suggestedFields,
           sessionId: initialDraft.sessionId,
         });
       }}
     >
       <div className="absolute top-0 left-0 w-1 h-full bg-brand-blue dark:bg-discord-accent" />
-      <div className="flex items-center gap-3 border-b border-gray-200 dark:border-discord-bg px-4 py-3 pl-5">
-        <div className="w-7 h-7 rounded-full bg-[#e0fbf4] dark:bg-discord-accent/20 text-[#048261] dark:text-discord-accent flex items-center justify-center shrink-0">
-          <Ticket size={17} />
+      <div className="flex items-center gap-2.5 border-b border-gray-200 dark:border-discord-bg px-4 py-2.5 pl-5">
+        <div className="w-6 h-6 rounded-full bg-[#e0fbf4] dark:bg-discord-accent/20 text-[#048261] dark:text-discord-accent flex items-center justify-center shrink-0">
+          <Ticket size={15} />
         </div>
-        <h4 className="text-[15px] font-semibold text-gray-900 dark:text-discord-text leading-tight">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-discord-text leading-tight">
           Xác nhận yêu cầu hỗ trợ (AI đã điền sẵn)
         </h4>
       </div>
 
-      <div className="px-4 py-4 pl-5 space-y-3">
+      <div className="px-4 py-3 pl-5 space-y-2.5">
+        <div className="grid gap-2.5 md:grid-cols-[1fr_260px]">
         <label className="block">
           <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-1.5">Tiêu đề</span>
           <input
@@ -634,19 +587,38 @@ function TicketDraftCard({
             ))}
           </select>
         </label>
+        </div>
 
         <label className="block">
           <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-1.5">Mô tả chi tiết</span>
           <textarea
-            rows={3}
+            rows={2}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 py-3 text-sm leading-relaxed text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent resize-none min-h-[82px]"
+            className="w-full rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 py-2 text-sm leading-relaxed text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent resize-none min-h-[60px]"
           />
         </label>
+
+        {initialDraft.suggestedFields.length > 0 && (
+          <div className="rounded-lg border border-dashed border-gray-300 dark:border-discord-bg bg-white dark:bg-discord-card px-3 py-2.5">
+            <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-1.5">
+              Gợi ý nên bổ sung
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {initialDraft.suggestedFields.map((suggestion) => (
+                <span
+                  key={suggestion}
+                  className="rounded-full border border-gray-200 dark:border-discord-bg bg-gray-50 dark:bg-discord-sidebar px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-discord-text"
+                >
+                  {suggestion}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center justify-end gap-3 bg-gray-50 dark:bg-discord-card/50 border-t border-gray-100 dark:border-discord-bg px-4 py-2.5">
+      <div className="flex items-center justify-end gap-2.5 bg-gray-50 dark:bg-discord-card/50 border-t border-gray-100 dark:border-discord-bg px-4 py-2">
         <button
           type="button"
           onClick={onCancel}
@@ -674,8 +646,21 @@ function getTicketDraftValues(data: Record<string, unknown> | null | undefined):
     description: getString(payload.description),
     reason: getString(payload.reason) || 'user_requested',
     priority: getString(payload.priority) || 'normal',
+    suggestedFields: getStringArray(payload.suggested_fields),
     sessionId: getString(payload.session_id) || null,
   };
+}
+
+function removeTicketDraftAttachments(messages: Message[]): Message[] {
+  return messages.map((message) => {
+    if (!message.attachments?.some((attachment) => attachment.url === 'ticket_draft_confirmation')) {
+      return message;
+    }
+    return {
+      ...message,
+      attachments: message.attachments.filter((attachment) => attachment.url !== 'ticket_draft_confirmation'),
+    };
+  });
 }
 
 function formatTicketDraftMessage(draft: TicketDraftFormValues): string {
@@ -698,6 +683,10 @@ function toTicketCategory(value: string): TicketCategory {
 
 function getString(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+function getStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }
 
 function MarkdownMessage({ text }: { text: string }) {

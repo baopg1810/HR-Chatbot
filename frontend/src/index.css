@@ -21,3 +21,19 @@ html.dark body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes scale-circle {
+  0%, 100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.animate-scale-circle {
+  animation: scale-circle 1.2s ease-in-out infinite;
+}
+

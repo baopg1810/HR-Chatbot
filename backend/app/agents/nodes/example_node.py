@@ -7,7 +7,9 @@ from app.agents.state import AgentState
 from app.agents.ticket_draft_agent import (
     TICKET_CATEGORY_LABELS,
     format_ticket_message,
+    rewrite_ticket_description,
     run_ticket_draft_agent,
+    suggest_ticket_details,
 )
 from app.agents.tool_choice import choose_tool_for_state, tool_choice_to_state
 from app.agents.tools.example_tool import get_hr_metrics_tool, search_policy_tool
@@ -160,7 +162,7 @@ async def output_safeguard_node(state: AgentState) -> dict:
         context_summary=_output_context_summary(state, citations),
         has_citations=bool(citations),
         has_tool_result=any(
-            getattr(action, "type", None)
+            _action_type(action)
             in {"hr_metric_lookup", "ticket_draft_confirmation", "escalation_confirmation_required"}
             for action in actions
         ),
@@ -171,9 +173,10 @@ async def output_safeguard_node(state: AgentState) -> dict:
         return {"output_safeguard": decision.model_dump(), **answer_update}
     if decision.action == "redact":
         return {"output_safeguard": decision.model_dump(), "answer": decision.redacted_text or decision.user_message}
+    fallback_answer = _append_ticket_pause_reminder_if_needed(state, decision.user_message)
     return {
         "output_safeguard": decision.model_dump(),
-        "answer": decision.user_message,
+        "answer": fallback_answer,
         "citations": [],
         "actions": [ChatAction(type="none", label="KhÃ´ng cáº§n thao tÃ¡c", data=None)],
         "refusal_reason": state.get("refusal_reason") or "guardrail_output",
@@ -302,6 +305,52 @@ async def handle_ticket_intent_node(state: AgentState) -> dict:
     if not tool_decision.allowed and tool_decision.action != "require_confirmation":
         return _tool_blocked_state(tool_decision)
 
+    pending_draft = _pending_ticket_draft_from_state(state)
+    if _active_flow(state) == "ticket_draft" and pending_draft is not None and _has_complete_ticket_draft(pending_draft):
+        normalized_query = _normalize(query)
+        if _is_ticket_draft_guidance_question(normalized_query):
+            draft = _with_ticket_suggestions(pending_draft)
+            ticket_context = _ticket_context_from_state(state)
+            next_state = await _save_ticket_draft_state(state, draft, ticket_context)
+            return {
+                "answer": _ticket_draft_guidance_answer(draft),
+                "actions": [_ticket_draft_action(draft, state.get("session_id"))],
+                "citations": [],
+                "refusal_reason": None,
+                "escalated_ticket_id": None,
+                "session_state": next_state.model_dump(mode="json"),
+            }
+        if _is_ticket_submit_confirmation_message(normalized_query):
+            draft = _with_ticket_suggestions(pending_draft)
+            return {
+                "answer": "Mình đang giữ nháp ticket bên dưới. Bạn kiểm tra lại rồi bấm Gửi yêu cầu để tạo ticket nhé.",
+                "actions": [_ticket_draft_action(draft, state.get("session_id"))],
+                "citations": [],
+                "refusal_reason": None,
+                "escalated_ticket_id": None,
+            }
+        if _is_ticket_suggestion_prompt_only(query, _with_ticket_suggestions(pending_draft).suggested_fields):
+            draft = _with_ticket_suggestions(pending_draft)
+            return {
+                "answer": _ticket_draft_need_detail_answer(draft),
+                "actions": [_ticket_draft_action(draft, state.get("session_id"))],
+                "citations": [],
+                "refusal_reason": None,
+                "escalated_ticket_id": None,
+            }
+        if _is_ticket_draft_detail_update(normalized_query):
+            draft = _merge_ticket_draft_detail(pending_draft, query)
+            updated_ticket_context = _append_ticket_context(_ticket_context_from_state(state), "Người dùng", query)
+            next_state = await _save_ticket_draft_state(state, draft, updated_ticket_context)
+            return {
+                "answer": _ticket_draft_updated_answer(draft),
+                "actions": [_ticket_draft_action(draft, state.get("session_id"))],
+                "citations": [],
+                "refusal_reason": None,
+                "escalated_ticket_id": None,
+                "session_state": next_state.model_dump(mode="json"),
+            }
+
     ticket_context = _ticket_context_from_state(state)
     draft = run_ticket_draft_agent(query, ticket_context)
     updated_ticket_context = _append_ticket_context(ticket_context, "Người dùng", query)
@@ -309,6 +358,8 @@ async def handle_ticket_intent_node(state: AgentState) -> dict:
         next_state = default_ticket_draft_state(session_id or "", state.get("session_state"))
         if draft.missing_fields:
             next_state.pending_ticket_draft.missing_fields = draft.missing_fields
+        if draft.suggested_fields:
+            next_state.pending_ticket_draft.suggested_fields = draft.suggested_fields
         answer = draft.question or "Bạn cho mình biết nội dung cần HR hỗ trợ để mình tạo ticket nhé."
         next_state = next_state.model_copy(
             update={"ticket_context": _append_ticket_context(updated_ticket_context, "AI", answer)}
@@ -333,6 +384,7 @@ async def handle_ticket_intent_node(state: AgentState) -> dict:
                 description=draft.description,
                 priority=draft.priority,
                 missing_fields=[],
+                suggested_fields=draft.suggested_fields or suggest_ticket_details(draft.category, draft.description),
                 session_id=session_id,
             ),
             last_intent="ticket_create",
@@ -343,7 +395,7 @@ async def handle_ticket_intent_node(state: AgentState) -> dict:
     if session_id and state.get("db") is not None:
         await save_chat_session_state(state.get("db"), session_id, next_state)
     return {
-        "answer": _ticket_draft_ready_answer(draft.title, draft.description),
+        "answer": _ticket_draft_ready_answer(draft.title, draft.description, draft.suggested_fields),
         "actions": [
             ChatAction(
                 type="ticket_draft_confirmation",
@@ -357,6 +409,7 @@ async def handle_ticket_intent_node(state: AgentState) -> dict:
                     "reason": "user_requested",
                     "priority": draft.priority,
                     "session_id": state.get("session_id"),
+                    "suggested_fields": draft.suggested_fields or suggest_ticket_details(draft.category, draft.description),
                 },
             )
         ],
@@ -568,6 +621,145 @@ def _active_flow(state: AgentState) -> str:
     return "none"
 
 
+def _action_type(action) -> str | None:
+    if isinstance(action, dict):
+        return action.get("type")
+    return getattr(action, "type", None)
+
+
+def _pending_ticket_draft_from_state(state: AgentState) -> PendingTicketDraft | None:
+    session_state = state.get("session_state") or {}
+    if isinstance(session_state, ChatWorkflowState):
+        return session_state.pending_ticket_draft
+    if isinstance(session_state, dict):
+        raw_draft = session_state.get("pending_ticket_draft")
+        if isinstance(raw_draft, PendingTicketDraft):
+            return raw_draft
+        if isinstance(raw_draft, dict):
+            try:
+                return PendingTicketDraft.model_validate(raw_draft)
+            except Exception:
+                return None
+    return None
+
+
+def _has_complete_ticket_draft(draft: PendingTicketDraft) -> bool:
+    return bool(draft.title and draft.category and draft.description)
+
+
+def _with_ticket_suggestions(draft: PendingTicketDraft) -> PendingTicketDraft:
+    if draft.suggested_fields:
+        return draft
+    return draft.model_copy(
+        update={"suggested_fields": suggest_ticket_details(draft.category, draft.description or "")}
+    )
+
+
+def _ticket_draft_state(state: AgentState, draft: PendingTicketDraft, ticket_context: str) -> ChatWorkflowState:
+    return preserve_conversation_memory(
+        ChatWorkflowState(
+            active_flow="ticket_draft",
+            pending_ticket_draft=_with_ticket_suggestions(draft),
+            last_intent="ticket_create",
+            ticket_context=ticket_context,
+        ),
+        state.get("session_state"),
+    )
+
+
+async def _save_ticket_draft_state(
+    state: AgentState,
+    draft: PendingTicketDraft,
+    ticket_context: str,
+) -> ChatWorkflowState:
+    next_state = _ticket_draft_state(state, draft, ticket_context)
+    session_id = state.get("session_id")
+    if session_id and state.get("db") is not None:
+        await save_chat_session_state(state.get("db"), session_id, next_state)
+    return next_state
+
+
+def _ticket_draft_action(draft: PendingTicketDraft, session_id: str | None) -> ChatAction:
+    draft = _with_ticket_suggestions(draft)
+    category = draft.category or "other"
+    title = draft.title or "Yêu cầu hỗ trợ HR"
+    description = draft.description or ""
+    return ChatAction(
+        type="ticket_draft_confirmation",
+        label="Xác nhận yêu cầu hỗ trợ (AI đã điền sẵn)",
+        data={
+            "title": title,
+            "category": category,
+            "category_label": TICKET_CATEGORY_LABELS[category],
+            "description": description,
+            "message": format_ticket_message(title, category, description),
+            "reason": "user_requested",
+            "priority": draft.priority,
+            "session_id": session_id or draft.session_id,
+            "suggested_fields": draft.suggested_fields,
+        },
+    )
+
+
+def _merge_ticket_draft_detail(draft: PendingTicketDraft, query: str) -> PendingTicketDraft:
+    draft = _with_ticket_suggestions(draft)
+    detail = _clean_ticket_detail_update(query, draft.suggested_fields)
+    description = rewrite_ticket_description(draft.description or "", detail, draft.category)
+    return draft.model_copy(
+        update={
+            "description": description,
+            "suggested_fields": suggest_ticket_details(draft.category, description),
+        }
+    )
+
+
+def _clean_ticket_detail_update(query: str, suggested_fields: list[str] | None = None) -> str:
+    cleaned = re.sub(
+        r"^\s*(bo\s+sung|bổ\s+sung|them|thêm|cap\s+nhat|cập\s+nhật|mo\s+ta|mô\s+tả)\s*[:\-]?\s*",
+        "",
+        str(query or "").strip(),
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"^\s*(la|là)\s+", "", cleaned, flags=re.IGNORECASE)
+    cleaned = _strip_suggestion_label(cleaned, suggested_fields or [])
+    return " ".join(cleaned.split())
+
+
+def _strip_suggestion_label(text: str, suggested_fields: list[str]) -> str:
+    if ":" not in text:
+        return text
+    label, value = text.split(":", 1)
+    normalized_label = _normalize(label)
+    for suggestion in suggested_fields:
+        normalized_suggestion = _normalize(suggestion)
+        if normalized_label == normalized_suggestion or normalized_label.endswith(normalized_suggestion):
+            return value.strip()
+    return text
+
+
+def _is_ticket_suggestion_prompt_only(query: str, suggested_fields: list[str]) -> bool:
+    if not suggested_fields:
+        return False
+    normalized_query = _normalize(str(query or "").strip().rstrip(":"))
+    for suggestion in suggested_fields:
+        normalized_suggestion = _normalize(suggestion)
+        if normalized_query in {normalized_suggestion, f"bo sung {normalized_suggestion}"}:
+            return True
+    return _clean_ticket_detail_update(query, suggested_fields) == ""
+
+
+def _append_ticket_description(current: str, detail: str) -> str:
+    current = str(current or "").strip()
+    detail = str(detail or "").strip()
+    if not detail:
+        return current
+    if _normalize(detail) in _normalize(current):
+        return current
+    if not current:
+        return detail
+    return f"{current}\n\nThông tin bổ sung: {detail}"
+
+
 def _ticket_context_from_state(state: AgentState) -> str:
     session_state = state.get("session_state") or {}
     if isinstance(session_state, ChatWorkflowState):
@@ -587,12 +779,19 @@ def _append_ticket_context(context: str, role: str, message: str) -> str:
 
 def _append_ticket_pause_reminder_if_needed(state: AgentState, answer: str) -> str:
     metadata = state.get("metadata") or {}
-    if not metadata.get("active_ticket_paused"):
+    active_ticket_paused = metadata.get("active_ticket_paused") or (
+        _active_flow(state) == "ticket_draft" and not _has_action_type(state.get("actions", []), "ticket_draft_confirmation")
+    )
+    if not active_ticket_paused:
         return answer
     text = str(answer or "").rstrip()
     if not text or TICKET_PAUSE_REMINDER in text:
         return text
     return f"{text}\n\n{TICKET_PAUSE_REMINDER}"
+
+
+def _has_action_type(actions, action_type: str) -> bool:
+    return any(_action_type(action) == action_type for action in actions or [])
 
 
 def _is_cancel_ticket_draft_message(message: str) -> bool:
@@ -630,7 +829,58 @@ def _looks_like_policy_or_general_question(normalized: str) -> bool:
     )
 
 
-def _ticket_draft_ready_answer(title: str, description: str) -> str:
+def _is_ticket_draft_guidance_question(normalized: str) -> bool:
+    return bool(
+        re.search(r"\b(nen|can|phai)\s+(dien|ghi|mo\s+ta|bo\s+sung)\b", normalized)
+        or re.search(r"\b(goi\s+y|huong\s+dan|mau\s+mo\s+ta|viet\s+mo\s+ta)\b", normalized)
+        or re.search(r"\b(dien|ghi|bo\s+sung)\s+(gi|nhung\s+gi|thong\s+tin\s+gi|thong\s+tin\s+nao)\b", normalized)
+    )
+
+
+def _is_ticket_draft_detail_update(normalized: str) -> bool:
+    if not normalized:
+        return False
+    if _is_ticket_draft_guidance_question(normalized):
+        return False
+    if re.search(r"\b(tao|mo|gui|lap)\s+(ticket|phieu|yeu\s+cau)\b", normalized):
+        return bool(re.search(r"\b(bo\s+sung|them|cap\s+nhat|dien|mo\s+ta)\b", normalized))
+    if _looks_like_policy_or_general_question(normalized):
+        return False
+    return len(re.findall(r"[a-z0-9]{2,}", normalized)) >= 2
+
+
+def _ticket_draft_guidance_answer(draft: PendingTicketDraft) -> str:
+    suggestions = _ticket_suggestion_lines(draft.suggested_fields)
+    return (
+        "Bạn có thể bổ sung các thông tin dưới đây bằng cách chat từng ý, mình sẽ tự cập nhật vào mô tả nháp ticket:\n"
+        f"{suggestions}"
+    )
+
+
+def _ticket_draft_need_detail_answer(draft: PendingTicketDraft) -> str:
+    suggestions = _ticket_suggestion_lines(draft.suggested_fields)
+    return (
+        "Mình đã chọn đúng mục cần bổ sung. Bạn nhập thông tin cụ thể sau dấu hai chấm rồi gửi, "
+        "mình sẽ cập nhật vào mô tả nháp ticket.\n"
+        f"{suggestions}"
+    )
+
+
+def _ticket_draft_updated_answer(draft: PendingTicketDraft) -> str:
+    suggestions = _ticket_suggestion_lines(draft.suggested_fields)
+    return (
+        "Mình đã cập nhật thông tin bạn vừa cung cấp vào nháp ticket. "
+        "Bạn kiểm tra lại card bên dưới; nếu còn thiếu, bạn có thể chat thêm các ý này:\n"
+        f"{suggestions}"
+    )
+
+
+def _ticket_suggestion_lines(suggested_fields: list[str]) -> str:
+    suggestions = suggested_fields or suggest_ticket_details("other", "")
+    return "\n".join(f"- {item}" for item in suggestions[:4])
+
+
+def _ticket_draft_ready_answer(title: str, description: str, suggested_fields: list[str] | None = None) -> str:
     normalized = _normalize(f"{title} {description}")
     if "cham luong" in normalized or "tre luong" in normalized or "chua nhan luong" in normalized:
         month_match = re.search(r"\bthang\s+([0-9]{1,2})\b", normalized)
@@ -661,11 +911,11 @@ def _output_context_summary(state: AgentState, citations) -> str:
     if topic:
         summaries.append(f"Topic classification: {topic}")
     actions = state.get("actions", [])
-    if any(getattr(action, "type", None) == "hr_metric_lookup" for action in actions):
+    if _has_action_type(actions, "hr_metric_lookup"):
         summaries.append("Tool result confirmed: HRIS personal metrics lookup completed for the authenticated user.")
-    if any(getattr(action, "type", None) == "ticket_draft_confirmation" for action in actions):
+    if _has_action_type(actions, "ticket_draft_confirmation"):
         summaries.append("Tool result confirmed: a prefilled HR ticket draft is ready for user review, not submitted yet.")
-    if any(getattr(action, "type", None) == "escalation_confirmation_required" for action in actions):
+    if _has_action_type(actions, "escalation_confirmation_required"):
         summaries.append("Tool result confirmed: HR escalation confirmation is required before ticket submission.")
     return "\n".join(summaries)
 
