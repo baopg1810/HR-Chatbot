@@ -96,12 +96,15 @@ export function Chat() {
       setMessages(
         history.length > 0
           ? history.map((message) => ({
-            id: message.id,
-            sender: message.sender,
-            text: message.text,
-            timestamp: message.timestamp || new Date().toISOString(),
-            citations: message.citations,
-          }))
+              id: message.id,
+              sender: message.sender,
+              text: message.text,
+              timestamp: message.timestamp || new Date().toISOString(),
+              citations: message.citations,
+              attachments: message.actions
+                ?.filter((action) => !['none', 'hr_metric_lookup'].includes(action.type))
+                .map((action) => ({ name: action.label, url: action.type, data: action.data })),
+            }))
           : [newWelcomeMessage()],
       );
       setIsSidebarOpen(false);
@@ -155,13 +158,13 @@ export function Chat() {
             prev.map((message) =>
               message.id === response.message_id
                 ? {
-                  ...message,
-                  text: response.answer,
-                  citations: response.citations,
-                  attachments: response.actions
-                    .filter((action) => !['none', 'hr_metric_lookup'].includes(action.type))
-                    .map((action) => ({ name: action.label, url: action.type, data: action.data })),
-                }
+                    ...message,
+                    text: response.answer,
+                    citations: response.citations,
+                    attachments: response.actions
+                      .filter((action) => !['none', 'hr_metric_lookup'].includes(action.type))
+                      .map((action) => ({ name: action.label, url: action.type, data: action.data })),
+                  }
                 : message,
             ),
           );
@@ -217,17 +220,17 @@ export function Chat() {
         prev.map((message) =>
           message.id === messageId
             ? {
-              ...message,
-              attachments: message.attachments?.map((attachment, index) =>
-                index === attachmentIndex
-                  ? {
-                    name: `Đã tạo ticket ${ticket.id}`,
-                    url: 'escalation_created',
-                    data: { ticket_id: ticket.id, status: ticket.status },
-                  }
-                  : attachment,
-              ),
-            }
+                ...message,
+                attachments: message.attachments?.map((attachment, index) =>
+                  index === attachmentIndex
+                    ? {
+                        name: `Đã tạo ticket ${ticket.id}`,
+                        url: 'escalation_created',
+                        data: { ticket_id: ticket.id, status: ticket.status },
+                      }
+                    : attachment,
+                ),
+              }
             : message,
         ),
       );
@@ -266,17 +269,17 @@ export function Chat() {
         prev.map((message) =>
           message.id === messageId
             ? {
-              ...message,
-              attachments: message.attachments?.map((attachment, index) =>
-                index === attachmentIndex
-                  ? {
-                    name: `Đã tạo ticket ${ticket.id}`,
-                    url: 'escalation_created',
-                    data: { ticket_id: ticket.id, status: ticket.status },
-                  }
-                  : attachment,
-              ),
-            }
+                ...message,
+                attachments: message.attachments?.map((attachment, index) =>
+                  index === attachmentIndex
+                    ? {
+                        name: `Đã tạo ticket ${ticket.id}`,
+                        url: 'escalation_created',
+                        data: { ticket_id: ticket.id, status: ticket.status },
+                      }
+                    : attachment,
+                ),
+              }
             : message,
         ),
       );
@@ -311,9 +314,9 @@ export function Chat() {
       prev.map((message) =>
         message.id === messageId
           ? {
-            ...message,
-            attachments: message.attachments?.filter((_, index) => index !== attachmentIndex),
-          }
+              ...message,
+              attachments: message.attachments?.filter((_, index) => index !== attachmentIndex),
+            }
           : message,
       ),
     );
@@ -324,6 +327,10 @@ export function Chat() {
     'Quy định nghỉ phép cần báo trước bao lâu?',
     'Trạng thái bảo hiểm của tôi là gì?',
   ];
+
+  const hasTicketDraft = messages.some((message) =>
+    message.attachments?.some((attachment) => attachment.url === 'ticket_draft_confirmation'),
+  );
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-discord-bg relative overflow-hidden transition-colors">
@@ -357,7 +364,14 @@ export function Chat() {
                   </div>
                 )}
 
-                <div className="max-w-[85%] md:max-w-[75%] relative flex flex-col gap-3">
+                <div
+                  className={cn(
+                    'max-w-[85%] relative flex flex-col gap-3',
+                    msg.attachments?.some((attachment) => attachment.url === 'ticket_draft_confirmation')
+                      ? 'md:max-w-[88%]'
+                      : 'md:max-w-[75%]',
+                  )}
+                >
                   {isUser ? (
                     <div className="bg-[#f0f4f9] dark:bg-discord-accent text-gray-800 dark:text-white px-5 py-3.5 rounded-[24px] rounded-tr-sm leading-relaxed text-[15px] whitespace-pre-wrap">
                       {msg.text}
@@ -438,8 +452,14 @@ export function Chat() {
         </div>
       </div>
 
-      <div className="shrink-0 w-full bg-gradient-to-t from-white dark:from-discord-bg via-white dark:via-discord-bg to-transparent pb-6 pt-10 px-4 md:px-8 z-20 relative">
+      <div
+        className={cn(
+          'shrink-0 w-full bg-gradient-to-t from-white dark:from-discord-bg via-white dark:via-discord-bg to-transparent px-4 md:px-8 z-20 relative',
+          hasTicketDraft ? 'pb-4 pt-3' : 'pb-6 pt-10',
+        )}
+      >
         <div className="max-w-3xl mx-auto w-full">
+          {!hasTicketDraft && (
           <div className="flex gap-2 mb-4 overflow-x-auto pb-2 [scrollbar-width:none]">
             {suggestions.map((suggestion) => (
               <button
@@ -451,6 +471,7 @@ export function Chat() {
               </button>
             ))}
           </div>
+          )}
 
           <div className="relative flex items-center shadow-lg rounded-full bg-white dark:bg-discord-card border border-gray-200 dark:border-discord-bg focus-within:ring-2 focus-within:ring-gray-100 dark:focus-within:ring-discord-accent/20 transition-shadow">
             <input
@@ -469,7 +490,9 @@ export function Chat() {
               <Send size={18} />
             </button>
           </div>
+          {!hasTicketDraft && (
           <p className="text-center text-[11px] text-gray-400 dark:text-discord-text-muted mt-3 font-medium">AI có thể trả lời chưa đầy đủ. Hãy kiểm tra lại thông tin quan trọng.</p>
+          )}
         </div>
       </div>
 
@@ -577,8 +600,8 @@ function TicketDraftCard({
       }}
     >
       <div className="absolute top-0 left-0 w-1 h-full bg-brand-blue dark:bg-discord-accent" />
-      <div className="flex items-center gap-3 border-b border-gray-200 dark:border-discord-bg px-5 py-4 pl-6">
-        <div className="w-8 h-8 rounded-full bg-[#e0fbf4] dark:bg-discord-accent/20 text-[#048261] dark:text-discord-accent flex items-center justify-center shrink-0">
+      <div className="flex items-center gap-3 border-b border-gray-200 dark:border-discord-bg px-4 py-3 pl-5">
+        <div className="w-7 h-7 rounded-full bg-[#e0fbf4] dark:bg-discord-accent/20 text-[#048261] dark:text-discord-accent flex items-center justify-center shrink-0">
           <Ticket size={17} />
         </div>
         <h4 className="text-[15px] font-semibold text-gray-900 dark:text-discord-text leading-tight">
@@ -586,23 +609,23 @@ function TicketDraftCard({
         </h4>
       </div>
 
-      <div className="px-5 py-5 pl-6 space-y-5">
+      <div className="px-4 py-4 pl-5 space-y-3">
         <label className="block">
-          <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-2">Tiêu đề</span>
+          <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-1.5">Tiêu đề</span>
           <input
             type="text"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className="w-full h-11 rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 text-sm text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent"
+            className="w-full h-10 rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 text-sm text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent"
           />
         </label>
 
         <label className="block">
-          <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-2">Danh mục</span>
+          <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-1.5">Danh mục</span>
           <select
             value={category}
             onChange={(event) => setCategory(toTicketCategory(event.target.value))}
-            className="w-full h-11 rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 text-sm text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent"
+            className="w-full h-10 rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 text-sm text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent"
           >
             {ticketCategories.map((item) => (
               <option key={item.value} value={item.value}>
@@ -613,28 +636,28 @@ function TicketDraftCard({
         </label>
 
         <label className="block">
-          <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-2">Mô tả chi tiết</span>
+          <span className="block text-xs font-semibold text-gray-700 dark:text-discord-text-muted mb-1.5">Mô tả chi tiết</span>
           <textarea
-            rows={4}
+            rows={3}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 py-3 text-sm leading-relaxed text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent resize-y min-h-[96px]"
+            className="w-full rounded-lg border border-gray-300 dark:border-discord-bg bg-gray-50 dark:bg-discord-card px-3 py-3 text-sm leading-relaxed text-gray-900 dark:text-discord-text outline-none focus:border-brand-blue dark:focus:border-discord-accent focus:ring-1 focus:ring-brand-blue dark:focus:ring-discord-accent resize-none min-h-[82px]"
           />
         </label>
       </div>
 
-      <div className="flex items-center justify-end gap-3 bg-gray-50 dark:bg-discord-card/50 border-t border-gray-100 dark:border-discord-bg px-5 py-3">
+      <div className="flex items-center justify-end gap-3 bg-gray-50 dark:bg-discord-card/50 border-t border-gray-100 dark:border-discord-bg px-4 py-2.5">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-discord-text hover:bg-white dark:hover:bg-discord-card rounded-lg transition-colors"
+          className="px-3.5 py-2 text-sm font-medium text-gray-600 dark:text-discord-text hover:bg-white dark:hover:bg-discord-card rounded-lg transition-colors"
         >
           Hủy
         </button>
         <button
           type="submit"
           disabled={!canSubmit}
-          className="px-5 py-2.5 text-sm font-semibold bg-brand-blue dark:bg-discord-accent text-white rounded-lg hover:bg-[#051c5e] dark:hover:bg-[#4752C4] transition-colors shadow-sm flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-4 py-2 text-sm font-semibold bg-brand-blue dark:bg-discord-accent text-white rounded-lg hover:bg-[#051c5e] dark:hover:bg-[#4752C4] transition-colors shadow-sm flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Gửi yêu cầu <Send size={14} />
         </button>

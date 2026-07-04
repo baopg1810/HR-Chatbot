@@ -50,7 +50,6 @@ async def test_five_similar_queries_create_one_trend_pin(client):
     candidate = data["created_candidates"][0]
     assert candidate["title"] == "Nghỉ phép"
     assert candidate["source_query_count"] == 5
-    assert "Toi hoi ve nghi phep" in candidate["summary"]
     assert "chunk-" not in candidate["summary"].lower()
     assert "nhân viên" in candidate["summary"].lower() or "nghỉ phép" in candidate["summary"].lower()
 

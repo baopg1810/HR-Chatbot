@@ -3,11 +3,8 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
 
 # ---- Stage 2: Frontend build ----
 FROM node:20-slim AS frontend_builder
@@ -26,8 +23,8 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copy installed packages from builder
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
 
 # Security: run as non-root user
 RUN useradd -m appuser
@@ -44,5 +41,5 @@ USER appuser
 EXPOSE 8000
 
 ENV PYTHONPATH=/app/backend:$PYTHONPATH
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
 

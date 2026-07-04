@@ -90,7 +90,9 @@ def _draft_with_rules(query: str) -> TicketDraftDecision:
 
 
 def _finalize_decision(query: str, decision: TicketDraftDecision) -> TicketDraftDecision:
-    description = _clean_description(decision.description or query)
+    query_description = _clean_description(query)
+    llm_description = _clean_description(decision.description or "")
+    description = query_description if _has_concrete_description(query_description) else llm_description
     if _is_payroll_issue(_normalize(description)):
         description = _sentence_case_with_period(description)
     if not _has_concrete_description(description):
@@ -98,15 +100,14 @@ def _finalize_decision(query: str, decision: TicketDraftDecision) -> TicketDraft
         return TicketDraftDecision(
             ready=False,
             missing_fields=list(dict.fromkeys(missing)),
-            question=decision.question
-            or (
+            question=(
                 "Bạn cho mình biết mô tả chi tiết vấn đề cần HR hỗ trợ nhé. "
                 "Mình sẽ dùng thông tin đó để điền form ticket."
             ),
         )
 
-    category = decision.category or _infer_category(description)
-    title = _clean_title(decision.title) or _title_from_description(description, category)
+    category = _infer_category(description)
+    title = _title_from_description(description, category)
     return TicketDraftDecision(
         ready=True,
         title=title,

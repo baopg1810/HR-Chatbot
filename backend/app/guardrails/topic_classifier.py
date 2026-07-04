@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import os
 
 from pydantic import ValidationError
 
 from app.config import get_settings
+from app.core.online_tests import provider_calls_disabled_under_pytest
 from app.guardrails.prompts import TOPIC_CLASSIFIER_PROMPT
 from app.guardrails.schemas import GuardrailParseError, GuardrailProviderError, TopicScopeDecision
 
@@ -58,4 +58,4 @@ def _gemini_generate_json(api_key: str, model: str, prompt: str) -> str:
 
 
 def should_skip_provider_calls() -> bool:
-    return "PYTEST_CURRENT_TEST" in os.environ
+    return provider_calls_disabled_under_pytest()

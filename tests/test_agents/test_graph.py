@@ -88,7 +88,7 @@ async def test_ticket_intent_without_description_asks_for_details():
     )
 
     response = result["response"]
-    assert "nội dung cần HR hỗ trợ" in response.answer
+    assert "mô tả chi tiết vấn đề" in response.answer
     assert response.actions[0].type == "none"
     assert response.escalated_ticket_id is None
 
@@ -105,8 +105,10 @@ async def test_ticket_intent_with_description_requires_confirmation():
     )
 
     response = result["response"]
-    assert response.actions[0].type == "escalation_confirmation_required"
+    assert response.actions[0].type == "ticket_draft_confirmation"
     assert response.actions[0].data["reason"] == "user_requested"
+    assert response.actions[0].data["title"] == "Hỗ trợ xử lý hợp đồng"
+    assert response.actions[0].data["category"] == "documents"
     assert response.escalated_ticket_id is None
 
 
@@ -127,8 +129,55 @@ async def test_ticket_detail_followup_requires_confirmation_after_agent_asks_for
     )
 
     response = result["response"]
-    assert response.actions[0].type == "escalation_confirmation_required"
-    assert response.actions[0].data["message"] == "tôi muốn nghỉ việc hẳn"
+    assert response.actions[0].type == "ticket_draft_confirmation"
+    assert response.actions[0].data["title"] == "Hỗ trợ thủ tục nghỉ việc"
+    assert response.actions[0].data["category"] == "documents"
+    assert response.actions[0].data["description"] == "tôi muốn nghỉ việc hẳn"
+    assert response.escalated_ticket_id is None
+
+
+@pytest.mark.asyncio
+async def test_payroll_delay_followup_completes_ticket_draft():
+    result = await agent.ainvoke(
+        {
+            "query": "tôi bị chậm lương tháng 6",
+            "current_user": DEMO_USERS["employee@example.com"],
+            "session_id": "session-payroll-delay-followup",
+            "message_id": "msg-payroll-delay-followup",
+            "conversation_context": (
+                "3 lượt hỏi đáp gần nhất:\n"
+                "[1] Người dùng: tôi muốn tạo ticket\n"
+                "[1] AI: Bạn cho mình biết mô tả chi tiết vấn đề cần HR hỗ trợ nhé."
+            ),
+        }
+    )
+
+    response = result["response"]
+    assert "chậm lương tháng 6" in response.answer
+    assert response.actions[0].type == "ticket_draft_confirmation"
+    assert response.actions[0].data["title"] == "Chậm lương tháng 6"
+    assert response.actions[0].data["category"] == "other"
+    assert response.actions[0].data["description"] == "Tôi bị chậm lương tháng 6."
+    assert response.actions[0].data["priority"] == "high"
+
+
+@pytest.mark.asyncio
+async def test_workplace_harassment_complaint_routes_to_ticket_draft():
+    result = await agent.ainvoke(
+        {
+            "query": "Tôi muốn khiếu nại về việc bị quấy rối ở công ty",
+            "current_user": DEMO_USERS["employee@example.com"],
+            "session_id": "session-workplace-complaint",
+            "message_id": "msg-workplace-complaint",
+        }
+    )
+
+    response = result["response"]
+    assert response.refusal_reason is None
+    assert response.actions[0].type == "ticket_draft_confirmation"
+    assert response.actions[0].data["title"] == "Khiếu nại về quấy rối tại công ty"
+    assert response.actions[0].data["category"] == "other"
+    assert response.actions[0].data["priority"] == "high"
     assert response.escalated_ticket_id is None
 
 

@@ -534,6 +534,7 @@ async def get_chat_session_messages(
     stmt = select(ChatMessage).filter(ChatMessage.session_id == session_uuid).order_by(ChatMessage.created_at.asc())
     result = await db.execute(stmt)
     messages = result.scalars().all()
+    actions_by_message_id = await _history_actions_by_message_id(db, session_id, messages)
 
     return [
         {
@@ -542,6 +543,7 @@ async def get_chat_session_messages(
             "text": message.content,
             "timestamp": message.created_at.isoformat() if message.created_at else None,
             "citations": message.citations or [],
+            "actions": actions_by_message_id.get(str(message.id), []),
         }
         for message in messages
     ]
@@ -572,6 +574,41 @@ async def clear_chat_session_workflow_state(
             detail="Bạn không có quyền cập nhật trạng thái cuộc trò chuyện này",
         )
     return await clear_chat_session_state(db, session_id)
+
+
+async def _history_actions_by_message_id(db: AsyncSession, session_id: str, messages: list) -> dict[str, list[dict]]:
+    state = await get_chat_session_state(db, session_id)
+    draft = state.pending_ticket_draft
+    if (
+        state.active_flow != "ticket_draft"
+        or draft is None
+        or not draft.title
+        or not draft.category
+        or not draft.description
+    ):
+        return {}
+
+    last_ai_message = next((message for message in reversed(messages) if message.role == "assistant"), None)
+    if last_ai_message is None:
+        return {}
+
+    from app.agents.ticket_draft_agent import TICKET_CATEGORY_LABELS, format_ticket_message
+
+    action = ChatAction(
+        type="ticket_draft_confirmation",
+        label="Xác nhận yêu cầu hỗ trợ (AI đã điền sẵn)",
+        data={
+            "title": draft.title,
+            "category": draft.category,
+            "category_label": TICKET_CATEGORY_LABELS[draft.category],
+            "description": draft.description,
+            "message": format_ticket_message(draft.title, draft.category, draft.description),
+            "reason": "user_requested",
+            "priority": draft.priority,
+            "session_id": session_id,
+        },
+    )
+    return {str(last_ai_message.id): [action.model_dump(mode="json")]}
 
 
 async def _record_and_return_chat(current_user: User, request: ChatRequest, response: ChatResponse) -> ChatResponse:

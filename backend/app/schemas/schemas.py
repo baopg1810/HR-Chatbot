@@ -148,6 +148,7 @@ class ChatWorkflowState(BaseModel):
     active_flow: ActiveFlow = "none"
     pending_ticket_draft: PendingTicketDraft | None = None
     last_intent: str | None = None
+    ticket_context: str = ""
     conversation_summary: str | None = None
     conversation_summary_message_count: int = 0
     conversation_summary_updated_at: str | None = None

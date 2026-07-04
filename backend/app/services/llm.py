@@ -12,6 +12,7 @@ from threading import Lock
 from time import perf_counter
 from typing import TYPE_CHECKING, Callable, Sequence
 
+from app.core.online_tests import provider_calls_disabled_under_pytest, strict_online_llm_test_mode
 from app.config import get_settings
 from app.models.schemas import Citation
 from langfuse import get_client
@@ -76,14 +77,17 @@ def embed_document_texts(title: str, texts: list[str]) -> list[Embedding]:
     gemini_inputs = [f"title: {title or 'none'} | text: {text}" for text in texts]
     fallback_inputs = [f"{title}\n{text}" for text in texts]
     settings = get_settings()
-    if not _configured_google_api_keys() and settings.app_env == "production":
+    strict_online = _strict_online_llm_test_mode()
+    if not _configured_google_api_keys() and (settings.app_env == "production" or strict_online):
         raise RuntimeError("Gemini API key is not configured.")
     if _configured_google_api_keys() and not _running_under_pytest():
         try:
             return _embed_with_gemini_batch(gemini_inputs)
         except Exception:
-            if settings.app_env == "production":
+            if settings.app_env == "production" or strict_online:
                 raise
+    if strict_online:
+        raise RuntimeError("Gemini embeddings are required when ONLINE_LLM_TESTS=1.")
     return [_local_embedding(text) for text in fallback_inputs]
 
 
@@ -119,8 +123,9 @@ def get_model_token_limits(model_name: str | None = None) -> ModelTokenLimits:
 def _get_model_token_limits_cached(model_name: str) -> ModelTokenLimits:
     settings = get_settings()
     keys = _ordered_google_api_keys()
+    strict_online = _strict_online_llm_test_mode()
     if not keys:
-        if settings.app_env == "production":
+        if settings.app_env == "production" or strict_online:
             raise RuntimeError("Gemini API key is not configured.")
         return ModelTokenLimits(_FALLBACK_INPUT_TOKEN_LIMIT, _FALLBACK_OUTPUT_TOKEN_LIMIT, source="fallback")
     if _running_under_pytest():
@@ -144,8 +149,10 @@ def _get_model_token_limits_cached(model_name: str) -> ModelTokenLimits:
             last_error = exc
             continue
 
-    if settings.app_env == "production" and last_error is not None:
+    if (settings.app_env == "production" or strict_online) and last_error is not None:
         raise last_error
+    if strict_online:
+        raise RuntimeError("Gemini model metadata is required when ONLINE_LLM_TESTS=1.")
     return ModelTokenLimits(_FALLBACK_INPUT_TOKEN_LIMIT, _FALLBACK_OUTPUT_TOKEN_LIMIT, source="fallback")
 
 
@@ -155,8 +162,9 @@ def count_prompt_tokens(prompt: str, model_name: str | None = None) -> int:
     settings = get_settings()
     model = model_name or settings.model_name
     keys = _ordered_google_api_keys()
+    strict_online = _strict_online_llm_test_mode()
     if not keys:
-        if settings.app_env == "production":
+        if settings.app_env == "production" or strict_online:
             raise RuntimeError("Gemini API key is not configured.")
         return _approximate_token_count(prompt)
     if _running_under_pytest():
@@ -176,8 +184,10 @@ def count_prompt_tokens(prompt: str, model_name: str | None = None) -> int:
             last_error = exc
             continue
 
-    if settings.app_env == "production" and last_error is not None:
+    if (settings.app_env == "production" or strict_online) and last_error is not None:
         raise last_error
+    if strict_online:
+        raise RuntimeError("Gemini token counting is required when ONLINE_LLM_TESTS=1.")
     return _approximate_token_count(prompt)
 
 
@@ -280,7 +290,12 @@ def choose_chat_tool_with_gemini(
         input={"query": query, "conversation_context": conversation_context or ""},
     ) as gen:
         keys = _ordered_google_api_keys()
-        if not keys or _running_under_pytest():
+        strict_online = _strict_online_llm_test_mode()
+        if not keys:
+            if settings.app_env == "production" or strict_online:
+                raise RuntimeError("Gemini API key is not configured.")
+            return None
+        if _running_under_pytest():
             return None
 
         last_error: Exception | None = None
@@ -301,6 +316,8 @@ def choose_chat_tool_with_gemini(
             gen.update(output=function_call)
             return function_call
 
+        if (settings.app_env == "production" or strict_online) and last_error is not None:
+            raise last_error
         gen.update(metadata={"tool_choice_error": last_error.__class__.__name__ if last_error else "no_function_call"})
         return None
 
@@ -836,7 +853,8 @@ def _generate_with_gemini(prompt: str) -> str | None:
         input=prompt
     ) as gen:
         keys = _ordered_google_api_keys()
-        if not keys and settings.app_env == "production":
+        strict_online = _strict_online_llm_test_mode()
+        if not keys and (settings.app_env == "production" or strict_online):
             raise RuntimeError("Gemini API key is not configured.")
         if not keys or _running_under_pytest():
             return None
@@ -866,13 +884,21 @@ def _generate_with_gemini(prompt: str) -> str | None:
                     )
                 gen.update(output=generated)
                 return generated
-        if settings.app_env == "production" and last_error is not None:
+        if (settings.app_env == "production" or strict_online) and last_error is not None:
             raise last_error
+        if strict_online:
+            raise RuntimeError("Gemini generation returned no text when ONLINE_LLM_TESTS=1.")
         return None
 
 
 def _generate_text_with_ttft(prompt: str) -> str | None:
-    chunks = list(_stream_with_gemini(prompt))
+    try:
+        chunks = list(_stream_with_gemini(prompt))
+    except Exception:
+        if not _strict_online_llm_test_mode():
+            raise
+        logger.warning("Gemini streaming failed during online tests; retrying non-stream generation.", exc_info=True)
+        chunks = []
     generated = "".join(chunks).strip()
     if generated:
         return generated
@@ -890,7 +916,8 @@ def _stream_with_gemini(prompt: str):
     ) as gen:
         generation_started_perf = perf_counter()
         keys = _ordered_google_api_keys()
-        if not keys and settings.app_env == "production":
+        strict_online = _strict_online_llm_test_mode()
+        if not keys and (settings.app_env == "production" or strict_online):
             raise RuntimeError("Gemini API key is not configured.")
         if not keys or _running_under_pytest():
             return
@@ -935,7 +962,7 @@ def _stream_with_gemini(prompt: str):
             if yielded:
                 gen.update(output=full_output)
                 return
-        if settings.app_env == "production" and last_error is not None:
+        if (settings.app_env == "production" or strict_online) and last_error is not None:
             raise last_error
 
 
@@ -993,14 +1020,17 @@ def _extract_stream_text(result: object) -> str | None:
 
 def _embed_text(gemini_input: str, fallback_input: str) -> Embedding:
     settings = get_settings()
-    if not _configured_google_api_keys() and settings.app_env == "production":
+    strict_online = _strict_online_llm_test_mode()
+    if not _configured_google_api_keys() and (settings.app_env == "production" or strict_online):
         raise RuntimeError("Gemini API key is not configured.")
     if _configured_google_api_keys() and not _running_under_pytest():
         try:
             return _embed_with_gemini(gemini_input)
         except Exception:
-            if settings.app_env == "production":
+            if settings.app_env == "production" or strict_online:
                 raise
+    if strict_online:
+        raise RuntimeError("Gemini embeddings are required when ONLINE_LLM_TESTS=1.")
     return _local_embedding(fallback_input)
 
 
@@ -1138,4 +1168,8 @@ def _tokens(text: str) -> list[str]:
 
 
 def _running_under_pytest() -> bool:
-    return "PYTEST_CURRENT_TEST" in os.environ
+    return provider_calls_disabled_under_pytest()
+
+
+def _strict_online_llm_test_mode() -> bool:
+    return strict_online_llm_test_mode()

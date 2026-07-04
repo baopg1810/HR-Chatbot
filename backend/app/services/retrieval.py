@@ -4,8 +4,8 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from functools import lru_cache
-import os
 
+from app.core.online_tests import provider_calls_disabled_under_pytest, strict_online_llm_test_mode
 from app.core.config import get_settings
 from app.models.schemas import Citation, User
 from app.rag.local_retriever import has_keyword_overlap, keyword_score
@@ -16,6 +16,7 @@ TOP_K = 5
 SEMANTIC_WEIGHT = 0.7
 LEXICAL_WEIGHT = 0.45
 SEMANTIC_ONLY_FACTOR = 0.5
+SEMANTIC_ONLY_MIN_SCORE = 0.3
 GENERIC_TOKENS = {
     "chinh",
     "sach",
@@ -99,6 +100,7 @@ def search_policy_chunks(query: str, user: User, limit: int = TOP_K) -> list[Cit
         for candidate in candidates.values()
         if (candidate.semantic_score >= MIN_SCORE or candidate.lexical_score > 0)
         and candidate.score >= MIN_SCORE
+        and (candidate.lexical_score > 0 or candidate.score >= SEMANTIC_ONLY_MIN_SCORE)
     ]
     scored.sort(key=lambda item: item.score, reverse=True)
     scored = _rerank_candidates(query, scored, limit)
@@ -186,6 +188,8 @@ def _rerank_candidates(query: str, candidates: list[HybridCandidate], limit: int
             ordered.extend(candidate for index, candidate in enumerate(candidates) if index not in seen_indexes)
         return ordered[:limit]
     except Exception as exc:
+        if strict_online_llm_test_mode():
+            raise
         print(f"Warning: Cohere rerank failed or timed out, falling back to database order: {exc}")
         return candidates[:limit]
 
@@ -211,7 +215,7 @@ def _candidate_rerank_text(candidate: HybridCandidate) -> str:
 
 
 def _running_under_pytest() -> bool:
-    return "PYTEST_CURRENT_TEST" in os.environ
+    return provider_calls_disabled_under_pytest()
 
 
 def _has_lexical_policy_overlap(query: str, title: str, excerpt: str, metadata: dict | None = None) -> bool:

@@ -53,6 +53,10 @@ HR_TERMS = {
     "chinh sach",
     "noi bo",
     "hanh chinh",
+    "thiet bi",
+    "laptop",
+    "may tinh",
+    "it support",
     "thu viec",
     "thai san",
     "khen thuong",
@@ -105,6 +109,17 @@ OUTSIDE_SCOPE_PATTERNS = [
     r"\b(homework|bai\s+tap|giai\s+toan|lich\s+su|dia\s+ly)\b",
 ]
 
+EXPLICIT_OUTSIDE_SCOPE_TASK_PATTERNS = [
+    r"\b(viet|tao|xay\s+dung|debug|sua|giai|huong\s+dan|lam)\b.{0,80}\b(code|script|chuong\s+trinh|api|fastapi|python|javascript|typescript|react|sql)\b",
+    r"\b(code|debug\s+code|viet\s+code)\s+(cho|giup|ho|dum|toi|minh|em|anh|chi)\b",
+    r"\b(thuat\s+toan|algorithm|quicksort|merge\s*sort|binary\s+search)\b",
+    r"\b(du\s+bao\s+thoi\s+tiet|thoi\s+tiet|weather)\b",
+    r"\b(bitcoin|crypto|gia\s+vang|chung\s+khoan)\b",
+    r"\b(bong\s+da|football|ty\s+so|lich\s+thi\s+dau)\b",
+    r"\b(nau\s+an|cong\s+thuc\s+nau|recipe)\b",
+    r"\b(homework|bai\s+tap|giai\s+toan|lich\s+su|dia\s+ly)\b",
+]
+
 SENSITIVE_FIELD_PATTERNS = [
     r"\b(luong|thu\s+nhap|salary|payroll|bang\s+luong)\b",
     r"\b(bao\s+hiem|bhxh|bhyt|insurance)\b",
@@ -153,6 +168,7 @@ def is_low_risk_self_service_or_helpdesk(message: str) -> bool:
     normalized = _normalize(message)
     return (
         _is_helpdesk_usage_message(normalized)
+        or _is_low_risk_hr_policy_question(normalized)
         or _is_self_service_hr_request(normalized)
         or _is_workplace_report(normalized)
         or _is_own_payroll_issue(normalized)
@@ -325,7 +341,7 @@ def rule_output_safeguard(
             internal_reason="output_contains_pii",
         )
 
-    if user_message and _is_outside_scope(_normalize(user_message)) and not looks_like_hr_question(user_message):
+    if user_message and _is_outside_scope(_normalize(user_message)):
         return OutputSafeguardDecision(
             allowed=False,
             action="fallback",
@@ -459,9 +475,28 @@ def _has_named_sensitive_target(normalized: str) -> bool:
 
 
 def _is_outside_scope(normalized: str) -> bool:
+    if _is_hr_policy_context_for_outside_keyword(normalized):
+        return False
+    if _matches_any(normalized, EXPLICIT_OUTSIDE_SCOPE_TASK_PATTERNS):
+        return True
     if not _matches_any(normalized, OUTSIDE_SCOPE_PATTERNS):
         return False
     return not looks_like_hr_question(normalized)
+
+
+def _is_hr_policy_context_for_outside_keyword(normalized: str) -> bool:
+    if "du lich" not in normalized:
+        return False
+    return any(
+        marker in normalized
+        for marker in {
+            "chinh sach nghi phep",
+            "quy dinh nghi phep",
+            "nghi phep khi di du lich",
+            "ngay phep",
+            "phep nam",
+        }
+    )
 
 
 def _is_ambiguous_hr_question(normalized: str) -> bool:
@@ -490,6 +525,32 @@ def _is_helpdesk_usage_message(normalized: str) -> bool:
             r"\b(tao|mo|gui|lap)\s+(ticket|phieu|yeu\s+cau)\b",
             r"\b(ticket|phieu\s+ho\s+tro|yeu\s+cau\s+ho\s+tro)\b",
         )
+    )
+
+
+def _is_low_risk_hr_policy_question(normalized: str) -> bool:
+    if _matches_any(normalized, SENSITIVE_FIELD_PATTERNS) or _is_third_party_sensitive_request(normalized):
+        return False
+    if _is_outside_scope(normalized) or not looks_like_hr_question(normalized):
+        return False
+
+    policy_markers = {
+        "bao truoc",
+        "can bao truoc",
+        "chinh sach",
+        "ngay phep",
+        "nghi phep",
+        "phep nam",
+        "phuc loi",
+        "quy dinh",
+        "quy trinh",
+        "thu tuc",
+    }
+    if any(marker in normalized for marker in policy_markers):
+        return True
+    return bool(
+        re.search(r"\b(nhan\s+vien|nguoi\s+lao\s+dong)\b.*\b(duoc|can|phai)\b", normalized)
+        and not _matches_any(normalized, SELF_PATTERNS)
     )
 
 

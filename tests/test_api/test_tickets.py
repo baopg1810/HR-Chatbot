@@ -5,13 +5,19 @@ import pytest_asyncio
 @pytest_asyncio.fixture(autouse=True)
 async def clean_ticket_store():
     from app.database.session import get_db_context
+    from app.models.chat_session_state import ChatSessionState
     from app.models.ticket import Ticket as DBTicket
+    from app.services.documents import reset_document_store
     from sqlalchemy import delete
+    reset_document_store()
     async with get_db_context() as db:
+        await db.execute(delete(ChatSessionState))
         await db.execute(delete(DBTicket))
         await db.commit()
     yield
+    reset_document_store()
     async with get_db_context() as db:
+        await db.execute(delete(ChatSessionState))
         await db.execute(delete(DBTicket))
         await db.commit()
 
@@ -60,8 +66,10 @@ async def test_chat_requires_confirmation_for_explicit_ticket_request(client):
 
     assert response.status_code == 200
     data = response.json()
-    assert data["actions"][0]["type"] == "escalation_confirmation_required"
+    assert data["actions"][0]["type"] == "ticket_draft_confirmation"
     assert data["actions"][0]["data"]["reason"] == "user_requested"
+    assert data["actions"][0]["data"]["title"] == "Hỗ trợ xử lý hợp đồng"
+    assert data["actions"][0]["data"]["category"] == "documents"
     assert data["escalated_ticket_id"] is None
 
 
@@ -78,7 +86,7 @@ async def test_chat_requires_confirmation_from_detail_after_ticket_prompt(client
     assert first_response.status_code == 200
     first_data = first_response.json()
     assert first_data["actions"][0]["type"] == "none"
-    assert "nội dung cần HR hỗ trợ" in first_data["answer"]
+    assert "mô tả chi tiết vấn đề" in first_data["answer"]
 
     second_response = await client.post(
         "/api/v1/chat",
@@ -87,9 +95,227 @@ async def test_chat_requires_confirmation_from_detail_after_ticket_prompt(client
     )
     assert second_response.status_code == 200
     second_data = second_response.json()
-    assert second_data["actions"][0]["type"] == "escalation_confirmation_required"
-    assert second_data["actions"][0]["data"]["message"] == "toi muon nghi viec han"
+    assert second_data["actions"][0]["type"] == "ticket_draft_confirmation"
+    assert second_data["actions"][0]["data"]["title"] == "Hỗ trợ thủ tục nghỉ việc"
+    assert second_data["actions"][0]["data"]["category"] == "documents"
+    assert second_data["actions"][0]["data"]["description"] == "toi muon nghi viec han"
     assert second_data["escalated_ticket_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_new_ticket_intent_creates_session_state(client):
+    from app.database.session import get_db_context
+    from app.services.chat_session_state import get_chat_session_state
+
+    token = await _token(client, "employee@example.com", "employee123")
+    session_id = "session-chat-state-create"
+
+    response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "tôi muốn tạo ticket", "session_id": session_id},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["actions"][0]["type"] == "none"
+    async with get_db_context() as db:
+        state = await get_chat_session_state(db, session_id)
+    assert state.active_flow == "ticket_draft"
+    assert state.pending_ticket_draft is not None
+    assert state.pending_ticket_draft.session_id == session_id
+
+
+@pytest.mark.asyncio
+async def test_payroll_delay_followup_uses_session_state_and_completes_draft(client):
+    token = await _token(client, "employee@example.com", "employee123")
+    session_id = "session-chat-state-payroll"
+
+    first_response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "tôi muốn tạo ticket", "session_id": session_id},
+    )
+    assert first_response.status_code == 200
+
+    second_response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "tôi bị chậm lương tháng 6", "session_id": session_id},
+    )
+
+    assert second_response.status_code == 200
+    data = second_response.json()
+    assert data["refusal_reason"] is None
+    assert data["actions"][0]["type"] == "ticket_draft_confirmation"
+    assert data["actions"][0]["data"]["title"] == "Chậm lương tháng 6"
+    assert data["actions"][0]["data"]["category"] == "other"
+    assert "chậm lương tháng 6" in data["actions"][0]["data"]["description"].lower()
+    assert data["actions"][0]["data"]["priority"] == "high"
+
+
+@pytest.mark.asyncio
+async def test_short_ticket_followup_uses_session_state_without_out_of_scope_fallback(client):
+    token = await _token(client, "employee@example.com", "employee123")
+    session_id = "session-chat-state-short-followup"
+
+    first_response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "tôi muốn tạo ticket", "session_id": session_id},
+    )
+    assert first_response.status_code == 200
+
+    second_response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "thiết bị", "session_id": session_id},
+    )
+
+    assert second_response.status_code == 200
+    data = second_response.json()
+    assert data["actions"][0]["type"] == "none"
+    assert "không thể hỗ trợ" not in data["answer"].lower()
+
+
+@pytest.mark.asyncio
+async def test_policy_question_during_ticket_draft_pauses_without_contaminating_ticket_context(client):
+    from app.database.session import get_db_context
+    from app.models.schemas import DocumentCreate
+    from app.services.chat_session_state import get_chat_session_state
+    from app.services.documents import create_document
+
+    create_document(
+        DocumentCreate(
+            title="Chinh sach nghi phep",
+            content="Nhan vien chinh thuc co 12 ngay nghi phep nam moi nam.",
+            visibility_roles=["employee", "hr_admin"],
+            department_ids=[],
+        )
+    )
+    token = await _token(client, "employee@example.com", "employee123")
+    session_id = "session-ticket-policy-pause"
+
+    first_response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "toi muon tao ticket", "session_id": session_id},
+    )
+    assert first_response.status_code == 200
+    async with get_db_context() as db:
+        state_before_policy = await get_chat_session_state(db, session_id)
+    ticket_context_before = state_before_policy.ticket_context
+
+    policy_response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "Chinh sach nghi phep nam nhu the nao?", "session_id": session_id},
+    )
+
+    assert policy_response.status_code == 200
+    policy_data = policy_response.json()
+    assert "Ticket đang được tạm giữ" in policy_data["answer"]
+    assert policy_data["actions"][0]["type"] in {"none", "escalation_confirmation_required"}
+    async with get_db_context() as db:
+        state_after_policy = await get_chat_session_state(db, session_id)
+    assert state_after_policy.active_flow == "ticket_draft"
+    assert state_after_policy.ticket_context == ticket_context_before
+    assert "Chinh sach nghi phep" not in state_after_policy.ticket_context
+
+    detail_response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "toi muon nghi viec han", "session_id": session_id},
+    )
+
+    assert detail_response.status_code == 200
+    detail_data = detail_response.json()
+    assert detail_data["actions"][0]["type"] == "ticket_draft_confirmation"
+    assert detail_data["actions"][0]["data"]["description"] == "toi muon nghi viec han"
+
+
+@pytest.mark.asyncio
+async def test_chat_history_restores_pending_ticket_draft_action(client):
+    token = await _token(client, "employee@example.com", "employee123")
+    session_id = "session-ticket-history-draft"
+
+    response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "Tao ticket giup toi ve viec hop dong thu viec chua duoc phan hoi", "session_id": session_id},
+    )
+    assert response.status_code == 200
+    assert response.json()["actions"][0]["type"] == "ticket_draft_confirmation"
+
+    history_response = await client.get(
+        f"/api/v1/chat/sessions/{session_id}/messages",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert history_response.status_code == 200
+    messages = history_response.json()
+    ai_messages = [message for message in messages if message["sender"] == "ai"]
+    assert ai_messages
+    restored_actions = ai_messages[-1]["actions"]
+    assert restored_actions[0]["type"] == "ticket_draft_confirmation"
+    assert restored_actions[0]["data"]["title"] == "Hỗ trợ xử lý hợp đồng"
+    assert restored_actions[0]["data"]["session_id"] == session_id
+
+
+@pytest.mark.asyncio
+async def test_ticket_submit_success_clears_session_state(client):
+    from app.database.session import get_db_context
+    from app.services.chat_session_state import get_chat_session_state
+
+    token = await _token(client, "employee@example.com", "employee123")
+    session_id = "session-chat-state-submit"
+
+    await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "tôi muốn tạo ticket", "session_id": session_id},
+    )
+    ticket_response = await client.post(
+        "/api/v1/escalations",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "session_id": session_id,
+            "message": "Tiêu đề: Test\nDanh mục: Khác\n\nMô tả:\nTest ticket.",
+            "reason": "user_requested",
+            "priority": "normal",
+        },
+    )
+
+    assert ticket_response.status_code == 200
+    async with get_db_context() as db:
+        state = await get_chat_session_state(db, session_id)
+    assert state.active_flow == "none"
+    assert state.pending_ticket_draft is None
+
+
+@pytest.mark.asyncio
+async def test_ticket_cancel_clears_session_state(client):
+    from app.database.session import get_db_context
+    from app.services.chat_session_state import get_chat_session_state
+
+    token = await _token(client, "employee@example.com", "employee123")
+    session_id = "session-chat-state-cancel"
+
+    await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "tôi muốn tạo ticket", "session_id": session_id},
+    )
+    clear_response = await client.post(
+        f"/api/v1/chat/sessions/{session_id}/state/clear",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert clear_response.status_code == 200
+    async with get_db_context() as db:
+        state = await get_chat_session_state(db, session_id)
+    assert state.active_flow == "none"
+    assert state.pending_ticket_draft is None
 
 
 @pytest.mark.asyncio

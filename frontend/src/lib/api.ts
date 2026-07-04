@@ -320,6 +320,7 @@ export interface ChatMessageRecord {
   text: string;
   timestamp: string | null;
   citations: Citation[];
+  actions?: ChatAction[];
 }
 
 export async function listChatSessions(token: string): Promise<ChatSessionRecord[]> {

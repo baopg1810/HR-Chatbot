@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     )
     embedding_model_name: str = "gemini-embedding-2"
     llm_temperature: float = Field(default=0.2, ge=0.0, le=2.0)
+    online_llm_tests: bool = True
 
     # Guardrails
     guardrails_enabled: bool = True

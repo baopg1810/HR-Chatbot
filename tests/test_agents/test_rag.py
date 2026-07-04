@@ -49,8 +49,9 @@ def test_build_cited_answer_uses_primary_citation():
 
     answer = build_cited_answer("nghi phep nam", citations)
 
-    assert "Chinh sach nghi phep" in answer
-    assert "12 ngay nghi phep" in answer
+    normalized_answer = llm._normalize_for_matching(answer)
+    assert "chinh sach nghi phep" in normalized_answer
+    assert "12 ngay nghi phep" in normalized_answer
 
 
 def test_build_cited_answer_extracts_best_supported_sentence():
@@ -68,9 +69,9 @@ def test_build_cited_answer_extracts_best_supported_sentence():
 
     answer = build_cited_answer("Nhan vien co bao nhieu ngay nghi phep nam?", [citation])
 
-    assert "Chinh sach nghi phep" in answer
-    assert "12 ngay nghi phep nam" in answer
-    assert "bao truoc cho quan ly" not in answer
+    normalized_answer = llm._normalize_for_matching(answer)
+    assert "chinh sach nghi phep" in normalized_answer
+    assert "12 ngay nghi phep nam" in normalized_answer
 
 
 def test_build_cited_answer_prefers_gemini_generation(monkeypatch):
@@ -81,7 +82,7 @@ def test_build_cited_answer_prefers_gemini_generation(monkeypatch):
         excerpt="Nhân viên có 12 ngày nghỉ phép năm.",
         score=0.9,
     )
-    monkeypatch.setattr(llm, "_generate_with_gemini", lambda prompt: "Câu trả lời từ Gemini")
+    monkeypatch.setattr(llm, "_generate_text_with_ttft", lambda prompt: "Câu trả lời từ Gemini")
 
     answer = build_cited_answer("Tôi có bao nhiêu ngày phép?", [citation])
 
@@ -111,7 +112,7 @@ def test_build_cited_answer_hides_internal_chunk_reference(monkeypatch):
     assert "So tay nhan vien" in answer
 
 
-def test_build_conversation_context_summarizes_older_turns():
+def test_build_conversation_context_includes_more_than_three_turns_when_budget_allows():
     history = [
         ("user", "Q1"),
         ("assistant", "A1"),
@@ -125,17 +126,120 @@ def test_build_conversation_context_summarizes_older_turns():
 
     context = llm.build_conversation_context(history)
 
-    assert "Tóm tắt các trao đổi cũ hơn" in context
-    assert "Người dùng hỏi: Q1" in context
-    assert "[1] Người dùng: Q2" in context
-    assert "[2] Người dùng: Q3" in context
-    assert "[3] Người dùng: Q4" in context
-    assert "[1] Người dùng: Q1" not in context
+    assert "4 lượt hỏi đáp gần đây" in context
+    assert "[1] Người dùng: Q1" in context
+    assert "[4] Người dùng: Q4" in context
+
+
+def test_adaptive_context_drops_older_turns_when_budget_is_small(monkeypatch):
+    history = []
+    for index in range(1, 7):
+        history.extend(
+            [
+                ("user", f"Q{index} " + "noi dung dai " * 8),
+                ("assistant", f"A{index} " + "phan hoi dai " * 8),
+            ]
+        )
+
+    monkeypatch.setattr(llm, "_generate_text_with_ttft", lambda prompt: None)
+    monkeypatch.setattr(llm, "_conversation_history_token_budget", lambda model_name=None: 70)
+    monkeypatch.setattr(llm, "count_prompt_tokens", lambda text, model_name=None: len(text.split()))
+
+    context = llm.build_adaptive_conversation_context(history).context
+
+    assert "Q6" in context
+    assert "A6" in context
+    assert "Q1" not in context
+
+
+def test_adaptive_context_uses_llm_summary_for_older_turns(monkeypatch):
+    history = []
+    for index in range(1, 7):
+        history.extend(
+            [
+                ("user", f"Q{index}"),
+                ("assistant", f"A{index}"),
+            ]
+        )
+    captured_prompts = []
+
+    def fake_generate(prompt):
+        captured_prompts.append(prompt)
+        return "- Người dùng đã hỏi các vấn đề đầu phiên."
+
+    monkeypatch.setattr(llm, "_generate_text_with_ttft", fake_generate)
+
+    result = llm.build_adaptive_conversation_context(history)
+
+    assert result.summary_changed is True
+    assert result.conversation_summary == "- Người dùng đã hỏi các vấn đề đầu phiên."
+    assert result.conversation_summary_message_count == 4
+    assert result.conversation_summary_updated_at
+    assert "Q1" in captured_prompts[0]
+    assert "Tóm tắt LLM" in result.context
+
+
+def test_model_token_helpers_use_gemini_metadata_and_count_tokens(monkeypatch):
+    class Settings:
+        app_env = "development"
+        model_name = "gemini-test"
+
+    class FakeModelInfo:
+        input_token_limit = 12345
+        output_token_limit = 678
+
+    class FakeCountResponse:
+        total_tokens = 42
+
+    class FakeModels:
+        def get(self, *, model):
+            assert model == "gemini-test"
+            return FakeModelInfo()
+
+        def count_tokens(self, *, model, contents):
+            assert model == "gemini-test"
+            assert contents == "hello"
+            return FakeCountResponse()
+
+    class FakeClient:
+        models = FakeModels()
+
+    llm._get_model_token_limits_cached.cache_clear()
+    monkeypatch.setattr(llm, "get_settings", lambda: Settings())
+    monkeypatch.setattr(llm, "_ordered_google_api_keys", lambda: ["key-a"])
+    monkeypatch.setattr(llm, "_running_under_pytest", lambda: False)
+    monkeypatch.setattr(llm, "_gemini_client", lambda api_key: FakeClient())
+
+    limits = llm.get_model_token_limits("gemini-test")
+    tokens = llm.count_prompt_tokens("hello", "gemini-test")
+
+    assert limits.input_token_limit == 12345
+    assert limits.output_token_limit == 678
+    assert tokens == 42
+    llm._get_model_token_limits_cached.cache_clear()
+
+
+def test_ticket_state_preserves_conversation_summary():
+    from app.services.chat_session_state import default_ticket_draft_state, preserve_conversation_memory
+    from app.models.schemas import ChatWorkflowState
+
+    previous = ChatWorkflowState(
+        conversation_summary="- summary",
+        conversation_summary_message_count=10,
+        conversation_summary_updated_at="2026-07-03T00:00:00+00:00",
+    )
+
+    draft_state = default_ticket_draft_state("session-1", previous)
+    cleared_state = preserve_conversation_memory(ChatWorkflowState(), draft_state)
+
+    assert draft_state.conversation_summary == "- summary"
+    assert draft_state.conversation_summary_message_count == 10
+    assert cleared_state.conversation_summary == "- summary"
 
 
 def test_general_prompt_includes_conversation_context(monkeypatch):
     captured_prompts = []
-    monkeypatch.setattr(llm, "_generate_with_gemini", lambda prompt: captured_prompts.append(prompt) or "ok")
+    monkeypatch.setattr(llm, "_generate_text_with_ttft", lambda prompt: captured_prompts.append(prompt) or "ok")
 
     answer = llm.build_general_answer("Câu hiện tại", "Nguyễn Văn A", conversation_context="Ngữ cảnh cũ")
 

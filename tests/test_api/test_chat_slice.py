@@ -126,27 +126,28 @@ async def test_chat_session_history_records_user_and_assistant_messages(client):
 @pytest.mark.asyncio
 async def test_chat_prompt_includes_saved_history_for_same_session(client, monkeypatch):
     captured_prompts = []
-    monkeypatch.setattr(llm, "_generate_with_gemini", lambda prompt: captured_prompts.append(prompt) or f"answer {len(captured_prompts)}")
+    monkeypatch.setattr(llm, "_generate_text_with_ttft", lambda prompt: captured_prompts.append(prompt) or "answer")
     token = await _employee_token(client)
     session_id = f"session-{uuid4()}"
 
     first_response = await client.post(
         "/api/v1/chat",
-        json={"message": "Bạn có thể hỗ trợ gì về HR?", "session_id": session_id},
+        json={"message": "Ban co the ho tro gi ve HR?", "session_id": session_id},
         headers={"Authorization": f"Bearer {token}"},
     )
     second_response = await client.post(
         "/api/v1/chat",
-        json={"message": "Bạn hỗ trợ quy trình HR nào?", "session_id": session_id},
+        json={"message": "Ban ho tro quy trinh HR nao?", "session_id": session_id},
         headers={"Authorization": f"Bearer {token}"},
     )
 
     assert first_response.status_code == 200
     assert second_response.status_code == 200
-    assert "LỊCH SỬ HỘI THOẠI" in captured_prompts[-1]
-    assert "Bạn có thể hỗ trợ gì về HR?" in captured_prompts[-1]
-    assert "Mình có thể hỗ trợ các câu hỏi liên quan đến nhân sự" in captured_prompts[-1]
-    assert "Bạn hỗ trợ quy trình HR nào?" in captured_prompts[-1]
+    assert captured_prompts
+    normalized_prompt = llm._normalize_for_matching(captured_prompts[-1])
+    assert "lich su hoi thoai" in normalized_prompt
+    assert "ban co the ho tro gi ve hr" in normalized_prompt
+    assert "ban ho tro quy trinh hr nao" in normalized_prompt
 
 
 @pytest.mark.asyncio

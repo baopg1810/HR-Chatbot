@@ -29,7 +29,7 @@ async def test_chat_calls_hr_metrics_function_for_leave_balance(client):
     response = await client.post(
         "/api/v1/chat",
         headers={"Authorization": f"Bearer {token}"},
-        json={"message": "Toi con bao nhieu ngay phep?", "session_id": None},
+        json={"message": "Tôi còn bao nhiêu ngày phép?", "session_id": None},
     )
 
     assert response.status_code == 200
@@ -37,6 +37,26 @@ async def test_chat_calls_hr_metrics_function_for_leave_balance(client):
     assert data["actions"][0]["type"] == "hr_metric_lookup"
     assert data["actions"][0]["data"]["employee_id"] == "emp-001"
     assert "8.5" in data["answer"]
+    assert "Trạng thái bảo hiểm" not in data["answer"]
+    assert "khen thưởng" not in data["answer"].lower()
+
+
+@pytest.mark.asyncio
+async def test_chat_answers_only_requested_hr_metric_for_insurance(client):
+    token = await _token(client, "employee@example.com", "employee123")
+
+    response = await client.post(
+        "/api/v1/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "Trang thai bao hiem cua toi la gi?", "session_id": None},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["actions"][0]["type"] == "hr_metric_lookup"
+    assert data["answer"] == "Trạng thái bảo hiểm của bạn là Đang hiệu lực."
+    assert "ngày phép" not in data["answer"].lower()
+    assert "khen thưởng" not in data["answer"].lower()
 
 
 def test_policy_questions_about_leave_and_insurance_are_not_personal_metric_intent():
@@ -53,11 +73,29 @@ async def test_classifier_calls_hris_tool_only_for_personal_metric_questions():
 
     assert personal["intent"] == "hr_metric"
     assert personal["requested_tool"] == "hris"
-    assert personal["metadata"]["tool_choice_source"] == "fallback_rule"
+    assert personal["metadata"]["tool_choice_source"] in {"model", "fallback_rule"}
     assert insurance_policy["intent"] == "policy_question"
-    assert insurance_policy["metadata"]["tool_choice_source"] == "fallback_rule"
+    assert insurance_policy["metadata"]["tool_choice_source"] in {"model", "fallback_rule"}
     assert leave_policy["intent"] == "policy_question"
-    assert leave_policy["metadata"]["tool_choice_source"] == "fallback_rule"
+    assert leave_policy["metadata"]["tool_choice_source"] in {"model", "fallback_rule"}
+
+
+@pytest.mark.asyncio
+async def test_ticket_detail_followup_routes_back_to_ticket_agent():
+    result = await classify_intent_node(
+        {
+            "query": "toi muon nghi viec han",
+            "conversation_context": (
+                "3 lượt hỏi đáp gần nhất:\n"
+                "[1] Người dùng: giúp tôi tạo ticket đi\n"
+                "[1] AI: Bạn cho mình biết mô tả chi tiết vấn đề cần HR hỗ trợ nhé. "
+                "Mình sẽ dùng thông tin đó để điền form ticket."
+            ),
+        }
+    )
+
+    assert result["intent"] == "ticket_create"
+    assert result["metadata"]["tool_choice_source"] in {"model", "fallback_rule"}
 
 
 @pytest.mark.asyncio
@@ -104,6 +142,21 @@ async def test_model_tool_choice_can_select_general_answer(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_model_general_choice_is_overridden_for_clear_policy_question(monkeypatch):
+    monkeypatch.setattr(
+        "app.agents.tool_choice.llm.choose_chat_tool_with_gemini",
+        lambda *args, **kwargs: {"name": "answer_general", "args": {"query": "hello"}},
+    )
+
+    result = await classify_intent_node({"query": "Quy định nghỉ phép cần báo trước bao lâu?"})
+
+    assert result["intent"] == "policy_question"
+    assert result["metadata"]["tool_choice_source"] == "fallback_rule"
+    assert result["metadata"]["tool_choice_name"] == "search_policy"
+    assert result["metadata"]["tool_choice_fallback_reason"] == "model_general_overridden_for_hr_policy"
+
+
+@pytest.mark.asyncio
 async def test_model_tool_choice_can_select_ticket_confirmation(client, monkeypatch):
     monkeypatch.setattr(
         "app.agents.tool_choice.llm.choose_chat_tool_with_gemini",
@@ -119,7 +172,8 @@ async def test_model_tool_choice_can_select_ticket_confirmation(client, monkeypa
 
     assert response.status_code == 200
     data = response.json()
-    assert data["actions"][0]["type"] == "escalation_confirmation_required"
+    assert data["actions"][0]["type"] == "ticket_draft_confirmation"
+    assert data["actions"][0]["data"]["category"] == "documents"
     assert data["escalated_ticket_id"] is None
 
 

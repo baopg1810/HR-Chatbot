@@ -14,6 +14,7 @@ from app.agents.nodes.example_node import (
     retrieve_policy_node,
     route_intent,
     route_retrieval,
+    should_continue_active_ticket_flow,
     topic_scope_node,
 )
 from app.agents.state import AgentState
@@ -23,7 +24,7 @@ def route_after_input_safeguard(state: AgentState) -> str:
     decision = state.get("input_safeguard") or {}
     if decision.get("blocked") is True or is_blocked(state):
         return "output_safeguard"
-    if (state.get("session_state") or {}).get("active_flow") == "ticket_draft":
+    if should_continue_active_ticket_flow(state):
         return "handle_ticket_intent"
     if decision.get("requires_handoff") is True and decision.get("reason_code") == "workplace_misconduct":
         return "handle_ticket_intent"

@@ -32,6 +32,9 @@ async def choose_tool_for_state(state: AgentState) -> ToolChoice:
         )
     )
     if model_choice is not None:
+        rule_choice = fallback_tool_choice(query, conversation_context)
+        if model_choice.tool_name == "answer_general" and rule_choice.tool_name == "search_policy":
+            return rule_choice.model_copy(update={"fallback_reason": "model_general_overridden_for_hr_policy"})
         return model_choice
     return fallback_tool_choice(query, conversation_context, fallback_reason="model_unavailable_or_invalid")
 

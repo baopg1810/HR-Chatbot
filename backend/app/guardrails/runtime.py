@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import re
+
 from app.config import get_settings
+from app.core.online_tests import provider_calls_disabled_under_pytest
 from app.guardrails.config import guardrails_enabled, should_enforce_guardrails, should_warn_only
 from app.guardrails.logging import log_guardrail_decision, log_guardrail_error
 from app.guardrails.messages import GENERAL_SAFETY_MESSAGE
@@ -37,6 +40,10 @@ async def check_input_safeguard(text: str, user_context: dict | None = None) -> 
         return _warn_to_allow(rule_input_safeguard(text))
 
     rule_decision = rule_input_safeguard(text)
+    if re.fullmatch(r"\s*\d{1,2}\s*", str(text or "")):
+        decision = rule_decision.model_copy(update={"internal_reason": "numeric_reply_rule_allow"})
+        log_guardrail_decision("input", decision.model_dump())
+        return _warn_to_allow(decision)
     if not _safeguard_provider_configured(settings) or _running_under_pytest():
         log_guardrail_decision("input", rule_decision.model_dump())
         return _warn_to_allow(rule_decision)
@@ -51,7 +58,9 @@ async def check_input_safeguard(text: str, user_context: dict | None = None) -> 
             decision = rule_decision if not rule_decision.allowed else _decision_for_guardrail_error("input_safeguard_error")
     else:
         decision = _combine_input_safeguards(rule_decision, provider_decision)
-    if rule_decision.allowed and not decision.allowed and is_low_risk_self_service_or_helpdesk(text):
+    if rule_decision.allowed and not decision.allowed and decision.reason_code != "guardrail_error" and (
+        is_low_risk_self_service_or_helpdesk(text) or looks_like_hr_question(text)
+    ):
         decision = rule_decision.model_copy(update={"internal_reason": "provider_false_positive_low_risk"})
     log_guardrail_decision("input", decision.model_dump())
     return _warn_to_allow(decision)
@@ -95,9 +104,24 @@ async def check_topic_scope(text: str) -> TopicScopeDecision:
             )
         else:
             decision = rule_decision
+    if rule_decision.scope == "out_of_scope":
+        decision = rule_decision.model_copy(update={"internal_reason": "rule_outside_scope_overrode_provider"})
+    if rule_decision.sensitivity == "confidential" and decision.sensitivity != "confidential":
+        decision = rule_decision.model_copy(update={"internal_reason": "rule_confidential_overrode_provider"})
+    if rule_decision.scope == "in_scope" and decision.scope != "in_scope" and looks_like_hr_question(text):
+        decision = rule_decision.model_copy(update={"internal_reason": "rule_in_scope_overrode_provider"})
     if (
         rule_decision.scope == "in_scope"
         and decision.scope != "in_scope"
+        and is_low_risk_self_service_or_helpdesk(text)
+    ):
+        decision = rule_decision.model_copy(update={"internal_reason": "provider_false_positive_low_risk"})
+    if (
+        decision.internal_reason
+        in {
+            "rule_confidential_overrode_provider",
+            "rule_in_scope_overrode_provider",
+        }
         and is_low_risk_self_service_or_helpdesk(text)
     ):
         decision = rule_decision.model_copy(update={"internal_reason": "provider_false_positive_low_risk"})
@@ -153,7 +177,9 @@ async def check_output_safeguard(
         )
     except Exception as exc:
         log_guardrail_error("output", exc)
-        if not rule_decision.allowed:
+        if rule_decision.allowed and rule_decision.internal_reason == "known_safe_guardrail_fallback":
+            decision = rule_decision.model_copy(update={"internal_reason": "provider_error_known_safe_rule_allow"})
+        elif not rule_decision.allowed:
             decision = rule_decision
         elif settings.guardrails_fail_closed and should_enforce_guardrails():
             decision = OutputSafeguardDecision(
@@ -172,6 +198,7 @@ async def check_output_safeguard(
         has_tool_result
         or topic == "hr_helpdesk_usage"
         or is_low_risk_self_service_or_helpdesk(user_message)
+        or looks_like_hr_question(user_message)
     ):
         decision = rule_decision.model_copy(update={"internal_reason": "provider_false_positive_low_risk"})
     log_guardrail_decision("output", decision.model_dump())
@@ -263,9 +290,7 @@ def _decision_for_guardrail_error(reason: str) -> InputSafeguardDecision:
 
 
 def _running_under_pytest() -> bool:
-    import os
-
-    return "PYTEST_CURRENT_TEST" in os.environ
+    return provider_calls_disabled_under_pytest()
 
 
 def _safeguard_provider_configured(settings) -> bool:

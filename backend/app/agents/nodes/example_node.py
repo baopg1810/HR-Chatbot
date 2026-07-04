@@ -32,6 +32,8 @@ from app.services.guardrails import (
 from app.services.llm import build_cited_answer, build_general_answer, build_refusal_answer
 from app.services.retrieval import user_has_readable_chunks
 
+TICKET_PAUSE_REMINDER = "Ticket đang được tạm giữ. Khi muốn tiếp tục, bạn có thể nói 'tiếp tục tạo ticket'."
+
 
 async def input_safeguard_node(state: AgentState) -> dict:
     query = state.get("query", "")
@@ -70,6 +72,16 @@ async def topic_scope_node(state: AgentState) -> dict:
         return {}
 
     query = state.get("query", "")
+    metadata = dict(state.get("metadata", {}))
+    if _active_flow(state) == "ticket_draft":
+        metadata.update(
+            {
+                "ticket_flow_action": "pause",
+                "should_update_ticket_context": False,
+                "active_ticket_paused": True,
+            }
+        )
+
     if _is_bare_numeric_reply_without_pending_choice(query, state.get("conversation_context", "")):
         return _clarification_state(
             state,
@@ -79,7 +91,7 @@ async def topic_scope_node(state: AgentState) -> dict:
         )
 
     decision = await check_topic_scope(query)
-    result = {"topic_scope": decision.model_dump()}
+    result = {"topic_scope": decision.model_dump(), "metadata": metadata}
 
     if decision.scope == "out_of_scope":
         result.update(
@@ -123,7 +135,22 @@ async def topic_scope_node(state: AgentState) -> dict:
 
 
 async def output_safeguard_node(state: AgentState) -> dict:
-    answer = state.get("answer", "")
+    if state.get("guardrail_blocked"):
+        answer = _append_ticket_pause_reminder_if_needed(state, state.get("answer", ""))
+        return {
+            "answer": answer,
+            "output_safeguard": {
+                "allowed": True,
+                "action": "allow",
+                "risk_level": "none",
+                "user_message": "",
+                "redacted_text": answer,
+                "internal_reason": "prevalidated_guardrail_response",
+            }
+        }
+
+    original_answer = state.get("answer", "")
+    answer = _append_ticket_pause_reminder_if_needed(state, original_answer)
     citations = state.get("citations", [])
     topic_scope = state.get("topic_scope") or {}
     actions = state.get("actions", [])
@@ -139,8 +166,9 @@ async def output_safeguard_node(state: AgentState) -> dict:
         ),
         topic=str(topic_scope.get("topic", "")),
     )
+    answer_update = {"answer": answer} if answer != original_answer else {}
     if decision.action == "allow":
-        return {"output_safeguard": decision.model_dump()}
+        return {"output_safeguard": decision.model_dump(), **answer_update}
     if decision.action == "redact":
         return {"output_safeguard": decision.model_dump(), "answer": decision.redacted_text or decision.user_message}
     return {
@@ -179,7 +207,12 @@ async def guardrail_node(state: AgentState) -> dict:
 
 
 async def classify_intent_node(state: AgentState) -> dict:
-    return tool_choice_to_state(await choose_tool_for_state(state))
+    if (state.get("metadata") or {}).get("active_ticket_paused"):
+        state = {**state, "conversation_context": ""}
+    result = tool_choice_to_state(await choose_tool_for_state(state))
+    if state.get("metadata"):
+        result["metadata"] = {**state.get("metadata", {}), **result.get("metadata", {})}
+    return result
 
 
 async def hr_metrics_node(state: AgentState) -> dict:
@@ -269,15 +302,21 @@ async def handle_ticket_intent_node(state: AgentState) -> dict:
     if not tool_decision.allowed and tool_decision.action != "require_confirmation":
         return _tool_blocked_state(tool_decision)
 
-    draft = run_ticket_draft_agent(query, state.get("conversation_context", ""))
+    ticket_context = _ticket_context_from_state(state)
+    draft = run_ticket_draft_agent(query, ticket_context)
+    updated_ticket_context = _append_ticket_context(ticket_context, "Người dùng", query)
     if not draft.ready or not draft.title or not draft.category or not draft.description:
         next_state = default_ticket_draft_state(session_id or "", state.get("session_state"))
         if draft.missing_fields:
             next_state.pending_ticket_draft.missing_fields = draft.missing_fields
+        answer = draft.question or "Bạn cho mình biết nội dung cần HR hỗ trợ để mình tạo ticket nhé."
+        next_state = next_state.model_copy(
+            update={"ticket_context": _append_ticket_context(updated_ticket_context, "AI", answer)}
+        )
         if session_id and state.get("db") is not None:
             await save_chat_session_state(state.get("db"), session_id, next_state)
         return {
-            "answer": draft.question or "Bạn cho mình biết nội dung cần HR hỗ trợ để mình tạo ticket nhé.",
+            "answer": answer,
             "actions": [ChatAction(type="none", label="Không cần thao tác", data=None)],
             "citations": [],
             "refusal_reason": None,
@@ -297,6 +336,7 @@ async def handle_ticket_intent_node(state: AgentState) -> dict:
                 session_id=session_id,
             ),
             last_intent="ticket_create",
+            ticket_context=updated_ticket_context,
         ),
         state.get("session_state"),
     )
@@ -394,6 +434,25 @@ async def respond_node(state: AgentState) -> dict:
 
 def is_blocked(state: AgentState) -> bool:
     return state.get("intent") == "blocked" or bool(state.get("guardrail_blocked"))
+
+
+def should_continue_active_ticket_flow(state: AgentState) -> bool:
+    if _active_flow(state) != "ticket_draft":
+        return False
+    query = state.get("query", "")
+    normalized = _normalize(query)
+    if not normalized:
+        return True
+    if (
+        _is_cancel_ticket_draft_message(query)
+        or _is_ticket_submit_confirmation_message(normalized)
+        or _is_continue_ticket_message(normalized)
+        or _is_ticket_intent(query)
+    ):
+        return True
+    if _looks_like_policy_or_general_question(normalized):
+        return False
+    return True
 
 
 def route_intent(state: AgentState) -> str:
@@ -501,7 +560,39 @@ def _is_workplace_complaint_topic(topic: str) -> bool:
 
 
 def _active_flow(state: AgentState) -> str:
-    return str((state.get("session_state") or {}).get("active_flow") or "none")
+    session_state = state.get("session_state") or {}
+    if isinstance(session_state, ChatWorkflowState):
+        return session_state.active_flow
+    if isinstance(session_state, dict):
+        return str(session_state.get("active_flow") or "none")
+    return "none"
+
+
+def _ticket_context_from_state(state: AgentState) -> str:
+    session_state = state.get("session_state") or {}
+    if isinstance(session_state, ChatWorkflowState):
+        return session_state.ticket_context
+    if isinstance(session_state, dict):
+        return str(session_state.get("ticket_context") or "")
+    return ""
+
+
+def _append_ticket_context(context: str, role: str, message: str) -> str:
+    compact_message = " ".join(str(message or "").split())
+    if not compact_message:
+        return context
+    updated = "\n".join(part for part in [context.strip(), f"{role}: {compact_message}"] if part)
+    return updated[-4000:]
+
+
+def _append_ticket_pause_reminder_if_needed(state: AgentState, answer: str) -> str:
+    metadata = state.get("metadata") or {}
+    if not metadata.get("active_ticket_paused"):
+        return answer
+    text = str(answer or "").rstrip()
+    if not text or TICKET_PAUSE_REMINDER in text:
+        return text
+    return f"{text}\n\n{TICKET_PAUSE_REMINDER}"
 
 
 def _is_cancel_ticket_draft_message(message: str) -> bool:
@@ -509,6 +600,33 @@ def _is_cancel_ticket_draft_message(message: str) -> bool:
     return bool(
         re.fullmatch(r"(huy|thoi|cancel)", normalized)
         or re.search(r"\b(khong\s+tao\s+nua|huy\s+ticket|huy\s+nhap|huy\s+draft|cancel\s+ticket)\b", normalized)
+    )
+
+
+def _is_continue_ticket_message(normalized: str) -> bool:
+    return bool(
+        re.fullmatch(r"(tiep\s+tuc|continue|resume)", normalized)
+        or re.search(r"\b(tiep\s+tuc\s+(tao\s+)?ticket|quay\s+lai\s+ticket|resume\s+ticket)\b", normalized)
+    )
+
+
+def _is_ticket_submit_confirmation_message(normalized: str) -> bool:
+    return bool(
+        re.fullmatch(r"(dong\s+y|xac\s+nhan|ok|okay|yes|submit)", normalized)
+        or re.search(r"\b(dong\s+y\s+gui\s+ticket|xac\s+nhan\s+gui\s+ticket|gui\s+ticket|submit\s+ticket|ok\s+tao\s+ticket)\b", normalized)
+    )
+
+
+def _looks_like_policy_or_general_question(normalized: str) -> bool:
+    if normalized in {"hello", "hi", "hey", "xin chao", "chao ban", "ban la ai"}:
+        return True
+    if re.search(r"\b(viet|tao|debug|sua|giai|huong\s+dan|lam)\b.{0,80}\b(code|script|python|javascript|fastapi|sql|thuat\s+toan|quicksort)\b", normalized):
+        return True
+    return bool(
+        re.search(
+            r"\b(chinh\s+sach|quy\s+dinh|quy\s+trinh|thu\s+tuc|la\s+gi|nhu\s+the\s+nao|bao\s+nhieu|duoc\s+khong|co\s+duoc|can\s+bao\s+truoc|muc\s+dong|ban\s+co\s+the|ban\s+la\s+ai)\b",
+            normalized,
+        )
     )
 
 

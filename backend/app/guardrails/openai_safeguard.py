@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from threading import Lock
 
 from pydantic import ValidationError
 
 from app.config import get_settings
+from app.core.online_tests import provider_calls_disabled_under_pytest
 from app.guardrails.messages import GENERAL_SAFETY_MESSAGE
 from app.guardrails.prompts import INPUT_SAFEGUARD_PROMPT, OUTPUT_SAFEGUARD_PROMPT
 from app.guardrails.schemas import (
@@ -250,4 +250,4 @@ def _tool_results_summary(context: dict) -> str:
 
 
 def should_skip_provider_calls() -> bool:
-    return "PYTEST_CURRENT_TEST" in os.environ
+    return provider_calls_disabled_under_pytest()
