@@ -40,11 +40,15 @@ export function Layout({ children }: { children: ReactNode }) {
            <div className="flex items-center gap-3">
              <button 
                onClick={() => setIsSidebarOpen(true)}
-               className="w-10 h-10 rounded-full bg-brand-blue flex items-center justify-center text-white shrink-0 shadow-md hover:opacity-90 transition-opacity"
+               className="w-10 h-10 rounded-full bg-gray-100 dark:bg-discord-card flex items-center justify-center text-gray-700 dark:text-discord-text shrink-0 hover:bg-gray-200 dark:hover:bg-discord-card-hover transition-colors"
+               aria-label="Mở menu"
              >
-               <Bot size={24} />
+               <Menu size={22} />
              </button>
-             <h1 className="font-semibold text-[17px] leading-tight text-brand-blue">Supportive AI</h1>
+             <div className="flex items-center gap-2">
+               <Bot size={24} className="text-brand-blue dark:text-discord-accent" />
+               <h1 className="font-semibold text-[17px] leading-tight text-brand-blue dark:text-discord-text">Supportive AI</h1>
+             </div>
            </div>
         </div>
         

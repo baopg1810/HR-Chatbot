@@ -74,9 +74,10 @@ export function Sidebar({ onClose, onDesktopToggle, isCollapsed = false }: { onC
       {onClose && (
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-gray-500 hover:bg-gray-100 rounded-lg md:hidden"
+          className="absolute top-3 right-3 p-2 text-gray-500 dark:text-discord-text-muted hover:bg-gray-100 dark:hover:bg-discord-card rounded-lg md:hidden z-10"
+          aria-label="Đóng menu"
         >
-          <X size={20} />
+          <X size={24} />
         </button>
       )}
       <div className={cn("mb-6 flex items-center gap-3", isCollapsed ? "justify-center px-0" : "px-6")}>

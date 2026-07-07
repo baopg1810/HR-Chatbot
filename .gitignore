@@ -34,3 +34,11 @@ cards
 MODE
 Module RAG
 AGENTS.md
+
+# Logs
+*.log
+backend/*.log
+
+# Vite cache
+.vite/
+frontend/.vite/

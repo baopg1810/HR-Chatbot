@@ -152,6 +152,34 @@ export async function streamChatRequest(
     headers,
     body: JSON.stringify({ message, session_id: sessionId || null }),
   });
+
+  if (response.status === 401) {
+    const stored = localStorage.getItem('hr-helpdesk-user');
+    if (stored) {
+      try {
+        const userObj = JSON.parse(stored);
+        const rToken = userObj.refreshToken;
+        if (rToken) {
+          const res = await refreshTokenRequest(rToken);
+          const updatedUser = {
+            ...userObj,
+            token: res.access_token,
+            refreshToken: res.refresh_token || userObj.refreshToken,
+          };
+          localStorage.setItem('hr-helpdesk-user', JSON.stringify(updatedUser));
+          window.dispatchEvent(new Event('auth-user-updated'));
+          
+          return streamChatRequest(res.access_token, message, sessionId, handlers);
+        }
+      } catch (err) {
+        localStorage.removeItem('hr-helpdesk-user');
+        window.dispatchEvent(new Event('auth-logout'));
+        console.error('Refresh token failed in streamChatRequest:', err);
+        throw new Error('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+      }
+    }
+  }
+
   if (!response.ok || !response.body) {
     const text = await response.text();
     throw new Error(text || response.statusText);
@@ -338,6 +366,18 @@ export async function clearChatSessionState(token: string, sessionId: string) {
   });
 }
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
 async function apiRequest<T>(
   path: string,
   options: RequestInit & { token?: string; json?: boolean } = {},
@@ -346,14 +386,79 @@ async function apiRequest<T>(
   if (options.json !== false) {
     headers.set('Content-Type', 'application/json');
   }
-  if (options.token) {
-    headers.set('Authorization', `Bearer ${options.token}`);
+
+  let token = options.token;
+  if (!token && path !== '/auth/login' && path !== '/auth/refresh') {
+    const stored = localStorage.getItem('hr-helpdesk-user');
+    if (stored) {
+      try {
+        const userObj = JSON.parse(stored);
+        token = userObj.token;
+      } catch {
+        // Ignore JSON parse errors
+      }
+    }
+  }
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
   });
+
+  if (response.status === 401 && path !== '/auth/login' && path !== '/auth/refresh') {
+    const stored = localStorage.getItem('hr-helpdesk-user');
+    if (stored) {
+      try {
+        const userObj = JSON.parse(stored);
+        const rToken = userObj.refreshToken;
+
+        if (rToken) {
+          if (!isRefreshing) {
+            isRefreshing = true;
+            void refreshTokenRequest(rToken)
+              .then((res) => {
+                isRefreshing = false;
+                const updatedUser = {
+                  ...userObj,
+                  token: res.access_token,
+                  refreshToken: res.refresh_token || userObj.refreshToken,
+                };
+                localStorage.setItem('hr-helpdesk-user', JSON.stringify(updatedUser));
+                window.dispatchEvent(new Event('auth-user-updated'));
+                onRefreshed(res.access_token);
+              })
+              .catch((err) => {
+                isRefreshing = false;
+                localStorage.removeItem('hr-helpdesk-user');
+                window.dispatchEvent(new Event('auth-logout'));
+                refreshSubscribers = [];
+                console.error('Refresh token failed:', err);
+              });
+          }
+
+          return new Promise<T>((resolve, reject) => {
+            subscribeTokenRefresh((newToken) => {
+              const newOptions = { ...options, token: newToken };
+              resolve(apiRequest<T>(path, newOptions));
+            });
+
+            const handleAuthLogout = () => {
+              window.removeEventListener('auth-logout', handleAuthLogout);
+              reject(new Error('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.'));
+            };
+            window.addEventListener('auth-logout', handleAuthLogout);
+          });
+        }
+      } catch {
+        // Ignore parse error
+      }
+    }
+  }
+
   const text = await response.text();
   const contentType = response.headers.get('content-type') || '';
   const data = text && contentType.includes('application/json') ? JSON.parse(text) : null;

@@ -14,10 +14,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('hr-helpdesk-user');
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
+    const handleUpdate = () => {
+      const stored = localStorage.getItem('hr-helpdesk-user');
+      if (stored) {
+        setUser(JSON.parse(stored));
+      } else {
+        setUser(null);
+      }
+    };
+
+    handleUpdate();
+
+    window.addEventListener('auth-user-updated', handleUpdate);
+    window.addEventListener('auth-logout', handleUpdate);
+    return () => {
+      window.removeEventListener('auth-user-updated', handleUpdate);
+      window.removeEventListener('auth-logout', handleUpdate);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {

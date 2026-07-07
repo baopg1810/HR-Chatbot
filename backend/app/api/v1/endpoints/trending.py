@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from app.schemas.schemas import TrendCandidatesResponse, TrendPin, TrendPinsResponse, TrendRunRequest, TrendRunResponse
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.services.trending import approve_trend_candidate, list_trend_candidates, list_trend_pins, run_trending
+from app.services.telegram import broadcast_trend_pin
 
 router = APIRouter()
 
@@ -33,10 +34,12 @@ async def admin_trending_candidates(current_user: User = Depends(get_current_use
 @router.post("/admin/trending/candidates/{candidate_id}/pin", response_model=TrendPin)
 async def admin_approve_trending_candidate(
     candidate_id: str,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ) -> TrendPin:
     _require_hr_admin(current_user)
     pin = approve_trend_candidate(candidate_id)
     if pin is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy trend candidate")
+    background_tasks.add_task(broadcast_trend_pin, pin)
     return pin

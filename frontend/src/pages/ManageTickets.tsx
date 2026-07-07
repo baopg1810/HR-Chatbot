@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Ban, Calendar, Check, CheckCircle2, Clock, Filter, Flag, MessageSquare, Search, Sparkles, Ticket, User } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Ban, Calendar, Check, CheckCircle2, Clock, Filter, Flag, MessageSquare, Search, Sparkles, Ticket, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import {
@@ -40,17 +40,14 @@ export function ManageTickets() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId) || tickets[0];
+  const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId);
 
   useEffect(() => {
     refresh();
   }, [user]);
 
   useEffect(() => {
-    if (!selectedTicketId && tickets[0]) {
-      setSelectedTicketId(tickets[0].id);
-    }
-    if (selectedTicketId && tickets.length > 0 && !tickets.some((ticket) => ticket.id === selectedTicketId)) {
+    if (!selectedTicketId && tickets.length > 0 && window.innerWidth >= 768) {
       setSelectedTicketId(tickets[0].id);
     }
   }, [tickets, selectedTicketId]);
@@ -145,7 +142,10 @@ export function ManageTickets() {
         )}
       </AnimatePresence>
 
-      <div className="w-full md:w-[400px] border-r border-gray-200 dark:border-discord-bg flex flex-col bg-white dark:bg-discord-sidebar shrink-0 h-full z-10 shadow-[2px_0_10px_rgba(0,0,0,0.02)] transition-colors">
+      <div className={cn(
+        "w-full md:w-[400px] border-r border-gray-200 dark:border-discord-bg flex-col bg-white dark:bg-discord-sidebar shrink-0 h-full z-10 shadow-[2px_0_10px_rgba(0,0,0,0.02)] transition-colors",
+        selectedTicket && activeTab === 'inbox' ? "hidden md:flex" : "flex"
+      )}>
         <div className="p-5 border-b border-gray-100 dark:border-discord-bg">
           <h1 className="text-2xl font-extrabold text-gray-900 dark:text-discord-text mb-5 tracking-tight">Quản lý yêu cầu</h1>
 
@@ -242,11 +242,20 @@ export function ManageTickets() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col bg-[#f8f9fc] dark:bg-discord-bg h-full overflow-hidden transition-colors">
+      <div className={cn(
+        "flex-1 flex-col bg-[#f8f9fc] dark:bg-discord-bg h-full overflow-hidden transition-colors",
+        !selectedTicket && activeTab === 'inbox' ? "hidden md:flex" : "flex"
+      )}>
         {selectedTicket && activeTab === 'inbox' ? (
           <>
-            <div className="bg-white/80 dark:bg-discord-sidebar/80 backdrop-blur-md border-b border-gray-200 dark:border-discord-bg px-6 py-4 flex flex-wrap items-center justify-between shrink-0 shadow-sm z-20 gap-4 sticky top-0 transition-colors">
-              <div className="flex items-center gap-4 min-w-0">
+            <div className="bg-white/80 dark:bg-discord-sidebar/80 backdrop-blur-md border-b border-gray-200 dark:border-discord-bg px-4 md:px-6 py-4 flex flex-wrap items-center justify-between shrink-0 shadow-sm z-20 gap-4 sticky top-0 transition-colors">
+              <div className="flex items-center gap-2 md:gap-4 min-w-0 w-full md:w-auto">
+                <button 
+                  onClick={() => setSelectedTicketId('')}
+                  className="md:hidden p-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-discord-card shrink-0"
+                >
+                  <ArrowLeft size={20} />
+                </button>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm shrink-0 bg-brand-blue shadow-md shadow-brand-blue/20">
                   <Ticket size={20} />
                 </div>
@@ -258,20 +267,20 @@ export function ManageTickets() {
                   <h2 className="font-extrabold text-gray-900 dark:text-discord-text text-lg leading-tight truncate">{selectedTicket.summary}</h2>
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 md:gap-3 shrink-0 w-full md:w-auto justify-end">
                 {selectedTicket.status === 'open' && (
-                  <button onClick={() => handleStatusUpdate(selectedTicket.id, 'in_progress')} className="rounded-xl bg-blue-600 dark:bg-discord-accent text-white hover:bg-blue-700 dark:hover:bg-[#4752C4] px-5 py-2.5 text-sm font-bold transition-all flex items-center gap-2">
-                    <CheckCircle2 size={18} /> Tiếp nhận xử lý
+                  <button onClick={() => handleStatusUpdate(selectedTicket.id, 'in_progress')} className="rounded-xl bg-blue-600 dark:bg-discord-accent text-white hover:bg-blue-700 dark:hover:bg-[#4752C4] px-4 md:px-5 py-2.5 text-sm font-bold transition-all flex items-center gap-2">
+                    <CheckCircle2 size={18} /> <span className="hidden md:inline">Tiếp nhận xử lý</span><span className="md:hidden">Nhận</span>
                   </button>
                 )}
                 {selectedTicket.status !== 'resolved' && selectedTicket.status !== 'rejected' && (
-                  <button onClick={() => handleStatusUpdate(selectedTicket.id, 'rejected')} className="rounded-xl bg-red-600 text-white hover:bg-red-700 px-5 py-2.5 text-sm font-bold transition-all flex items-center gap-2">
-                    <Ban size={18} /> Từ chối xử lý
+                  <button onClick={() => handleStatusUpdate(selectedTicket.id, 'rejected')} className="rounded-xl bg-red-600 text-white hover:bg-red-700 px-4 md:px-5 py-2.5 text-sm font-bold transition-all flex items-center gap-2">
+                    <Ban size={18} /> <span className="hidden md:inline">Từ chối xử lý</span><span className="md:hidden">Từ chối</span>
                   </button>
                 )}
                 {selectedTicket.status !== 'resolved' && selectedTicket.status !== 'rejected' && (
-                  <button onClick={() => handleStatusUpdate(selectedTicket.id, 'resolved')} className="rounded-xl bg-[#048261] text-white hover:bg-[#036e52] px-5 py-2.5 text-sm font-bold transition-all flex items-center gap-2">
-                    <Check size={18} /> Đánh dấu hoàn thành
+                  <button onClick={() => handleStatusUpdate(selectedTicket.id, 'resolved')} className="rounded-xl bg-[#048261] text-white hover:bg-[#036e52] px-4 md:px-5 py-2.5 text-sm font-bold transition-all flex items-center gap-2">
+                    <Check size={18} /> <span className="hidden md:inline">Đánh dấu hoàn thành</span><span className="md:hidden">Xong</span>
                   </button>
                 )}
               </div>

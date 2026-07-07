@@ -60,6 +60,12 @@ class Settings(BaseSettings):
     guardrail_log_decisions: bool = True
     guardrail_log_raw_text: bool = False
 
+    # Telegram
+    telegram_bot_token: str = ""
+    telegram_webhook_secret: str = ""
+    telegram_broadcast_enabled: bool = True
+    telegram_app_url: str = ""
+
     # Database
     database_url: str = "sqlite+aiosqlite:///./data/app.db"
 

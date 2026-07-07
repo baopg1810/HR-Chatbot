@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, document, chat, ticket, trending, feedback, hr_metrics
+from app.api.v1.endpoints import auth, document, chat, ticket, trending, feedback, hr_metrics, telegram
 from app.schemas.auth import UserResponse
 
 api_router = APIRouter()
@@ -13,6 +13,7 @@ api_router.include_router(ticket.router, tags=["tickets"])
 api_router.include_router(trending.router, tags=["trending"])
 api_router.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
 api_router.include_router(hr_metrics.router, tags=["hr-metrics"])
+api_router.include_router(telegram.router, tags=["telegram"])
 
 # Direct routes
 api_router.get("/me", response_model=UserResponse, tags=["auth"])(auth.get_me)

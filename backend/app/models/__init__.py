@@ -11,6 +11,7 @@ from app.models.ticket import Ticket
 from app.models.action_request import ActionRequest
 from app.models.feedback import Feedback
 from app.models.document_chunk import DocumentChunk
+from app.models.telegram import TelegramUserLink
 
 __all__ = [
     "Base",
@@ -26,6 +27,7 @@ __all__ = [
     "ActionRequest",
     "Feedback",
     "DocumentChunk",
+    "TelegramUserLink",
 ]
 
 

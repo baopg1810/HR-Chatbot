@@ -91,25 +91,42 @@ async def chat(
             input=request.message,
             metadata={"user_email": current_user.email},
         ) as trace:
-            session_state = await get_chat_session_state(db, session_id)
-            conversation_context, session_state = await _load_session_conversation_context(
-                current_user,
-                session_id,
-                db,
-                session_state,
-            )
-            await _save_user_message(current_user, session_id, request.message, db)
-            response = await _build_chat_response(
+            response = await run_chat_for_user(
                 current_user,
                 request,
                 session_id=session_id,
                 message_id=message_id,
-                conversation_context=conversation_context,
-                session_state=session_state,
                 db=db,
             )
             trace.update(output=response.answer)
             return response
+
+
+async def run_chat_for_user(
+    current_user: User,
+    request: ChatRequest,
+    *,
+    session_id: str,
+    message_id: str,
+    db: AsyncSession,
+) -> ChatResponse:
+    session_state = await get_chat_session_state(db, session_id)
+    conversation_context, session_state = await _load_session_conversation_context(
+        current_user,
+        session_id,
+        db,
+        session_state,
+    )
+    await _save_user_message(current_user, session_id, request.message, db)
+    return await _build_chat_response(
+        current_user,
+        request,
+        session_id=session_id,
+        message_id=message_id,
+        conversation_context=conversation_context,
+        session_state=session_state,
+        db=db,
+    )
 
 
 @router.post("/chat/stream")

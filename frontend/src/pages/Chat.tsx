@@ -353,8 +353,8 @@ export function Chat() {
     <div className="flex flex-col h-full bg-white dark:bg-discord-bg relative overflow-hidden transition-colors">
       {/* Nút Clock lịch sử đã được chuyển vào Sidebar chính */}
 
-      <div className={cn('flex-1 overflow-y-auto px-4 md:px-8 lg:px-[15%]', hasTicketDraft ? 'pt-10 md:pt-8 pb-3' : 'pt-20 md:pt-16 pb-6')}>
-        <div className={cn('max-w-4xl mx-auto', hasTicketDraft ? 'space-y-4' : 'space-y-6 md:space-y-8')}>
+      <div className="flex-1 overflow-y-auto px-3 md:px-8 lg:px-[15%] pt-20 md:pt-16 pb-4 md:pb-6">
+        <div className="space-y-5 md:space-y-8 max-w-4xl mx-auto">
           {messages.map((msg) => {
             const isUser = msg.sender === 'user';
 
@@ -368,14 +368,14 @@ export function Chat() {
 
                 <div
                   className={cn(
-                    'max-w-[85%] relative flex flex-col gap-3',
+                    'max-w-[88%] relative flex flex-col gap-3',
                     msg.attachments?.some((attachment) => attachment.url === 'ticket_draft_confirmation')
                       ? 'md:max-w-[88%]'
                       : 'md:max-w-[75%]',
                   )}
                 >
                   {isUser ? (
-                    <div className="bg-[#f0f4f9] dark:bg-discord-accent text-gray-800 dark:text-white px-5 py-3.5 rounded-[24px] rounded-tr-sm leading-relaxed text-[15px] whitespace-pre-wrap">
+                    <div className="bg-[#f0f4f9] dark:bg-discord-accent text-gray-800 dark:text-white px-4 md:px-5 py-3 md:py-3.5 rounded-[20px] md:rounded-[24px] rounded-tr-sm leading-relaxed text-[15px] whitespace-pre-wrap">
                       {msg.text}
                     </div>
                   ) : (
@@ -469,25 +469,22 @@ export function Chat() {
 
       <div
         className={cn(
-          'shrink-0 w-full bg-gradient-to-t from-white dark:from-discord-bg via-white dark:via-discord-bg to-transparent px-4 md:px-8 z-20 relative',
-          hasTicketDraft ? 'pb-4 pt-3' : 'pb-6 pt-10',
+          'shrink-0 w-full bg-gradient-to-t from-white dark:from-discord-bg via-white dark:via-discord-bg to-transparent px-3 md:px-8 z-20 relative',
+          hasTicketDraft ? 'pb-4 pt-3' : 'pb-4 md:pb-6 pt-4 md:pt-10',
         )}
       >
         <div className="max-w-3xl mx-auto w-full">
-          {!hasTicketDraft && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => setInput(suggestion)}
-                  className="whitespace-nowrap px-4 py-2 rounded-full bg-white dark:bg-discord-card border border-gray-200 dark:border-discord-bg text-gray-600 dark:text-discord-text-muted shadow-sm text-sm font-medium hover:bg-gray-50 dark:hover:bg-discord-card-hover transition-colors"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )}
-
+          <div className="flex flex-wrap gap-2 mb-4">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                onClick={() => setInput(suggestion)}
+                className="whitespace-nowrap px-4 py-2 rounded-full bg-white dark:bg-discord-card border border-gray-200 dark:border-discord-bg text-gray-600 dark:text-discord-text-muted shadow-sm text-sm font-medium hover:bg-gray-50 dark:hover:bg-discord-card-hover transition-colors"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
           <div className="relative flex items-center shadow-lg rounded-full bg-white dark:bg-discord-card border border-gray-200 dark:border-discord-bg focus-within:ring-2 focus-within:ring-gray-100 dark:focus-within:ring-discord-accent/20 transition-shadow">
             <input
               ref={inputRef}
