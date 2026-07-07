@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -64,18 +65,19 @@ async def broadcast_trend_pin(pin: TrendPin) -> None:
 
 
 def format_chat_response_for_telegram(response: ChatResponse, *, app_url: str = "") -> str:
-    parts = [response.answer.strip() or "Mình chưa có câu trả lời phù hợp."]
+    parts = [_clean_telegram_text(response.answer) or "Mình chưa có câu trả lời phù hợp."]
     if response.citations:
         sources = []
         for citation in response.citations[:3]:
             title = getattr(citation, "document_title", None)
             section = getattr(citation, "section", None)
-            if title and section:
-                sources.append(f"{title} - {section}")
+            cleaned_section = _clean_source_section(section)
+            if title and cleaned_section:
+                sources.append(f"{title} - {cleaned_section}")
             elif title:
                 sources.append(title)
         if sources:
-            parts.append("Nguồn: " + "; ".join(sources))
+            parts.append("Nguồn: " + "; ".join(_unique_values(sources)))
 
     if _requires_web_confirmation(response):
         suffix = "Để xác nhận hoặc gửi yêu cầu, vui lòng mở HR Assistant"
@@ -114,6 +116,41 @@ def _clip_message(text: str) -> str:
     if len(text) <= MAX_TELEGRAM_MESSAGE_LENGTH:
         return text
     return text[: MAX_TELEGRAM_MESSAGE_LENGTH - 3].rstrip() + "..."
+
+
+def _clean_telegram_text(text: str) -> str:
+    cleaned = str(text or "")
+    cleaned = re.sub(r"\[\d+(?:\s*,\s*\d+)*\]", "", cleaned)
+    cleaned = re.sub(r"\*\*(.*?)\*\*", r"\1", cleaned)
+    cleaned = re.sub(r"__(.*?)__", r"\1", cleaned)
+    cleaned = re.sub(r"`([^`]+)`", r"\1", cleaned)
+    cleaned = re.sub(r"(?m)^\s*[-*]\s+", "- ", cleaned)
+    cleaned = re.sub(r"(?m)^\s*[-*]\s*$", "", cleaned)
+    cleaned = re.sub(r"[ \t]+\n", "\n", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
+
+
+def _clean_source_section(section: str | None) -> str:
+    if not section:
+        return ""
+    cleaned = str(section).strip()
+    cleaned = re.sub(r"^\s*chunk-\d+\s*(?:[-:]\s*)?", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"\bchunk-\d+\b", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s{2,}", " ", cleaned).strip(" -:;")
+    return cleaned
+
+
+def _unique_values(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    unique: list[str] = []
+    for value in values:
+        normalized = " ".join(value.split())
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        unique.append(normalized)
+    return unique
 
 
 def _is_forbidden_telegram_error(exc: Exception) -> bool:
